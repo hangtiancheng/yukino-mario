@@ -1,0 +1,27 @@
+import type { Size } from "@/types";
+
+export const VIEWPORT_WIDTH: number = 960;
+export const VIEWPORT_HEIGHT: number = 540;
+export const INFINITE_SEGMENT_TRIGGER_DISTANCE: number = 820;
+export const PLAYER_SIZE: Size = { width: 34, height: 48 };
+export const GRAVITY: number = 1_950;
+export const MOVE_SPEED: number = 265;
+export const JUMP_VELOCITY: number = 720;
+export const JUMP_CUT_VELOCITY: number = 290;
+export const MAX_FALL_SPEED: number = 980;
+export const MAX_FRAME_MS: number = 32;
+export const FIXED_STEP_MS: number = 1_000 / 60;
+export const CAMERA_EASE: number = 8;
+export const RUN_ANIMATION_FRAME_MS: number = 140;
+export const COYOTE_TIME_MS: number = 120;
+export const JUMP_BUFFER_MS: number = 130;
+export const MOVING_PLATFORM_RIDER_TOLERANCE: number = 8;
+export const STOMP_BOUNCE_VELOCITY: number = 560;
+export const STOMP_TOLERANCE: number = 16;
+export const COIN_SCORE: number = 100;
+export const ENEMY_SCORE: number = 250;
+export const BREAKABLE_SCORE: number = 50;
+export const PARTICLE_LIFE_MS: number = 520;
+export const REVIVE_INVULNERABILITY_MS: number = 1_500;
+export const INVULNERABILITY_FLICKER_MS: number = 100;
+export const MESSAGE_HOLD_MS: number = 2_400;
