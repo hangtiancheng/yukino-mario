@@ -44,5 +44,5 @@ export {
   TETROMINO_TYPES,
   getKickOffsets,
 } from "./tetrominoes";
-export type { CellOffset, KickOffset } from "./tetrominoes";
+export type { CellOffset, KickKey, KickOffset } from "./tetrominoes";
 export { cssColor, tetrisTheme } from "./theme";

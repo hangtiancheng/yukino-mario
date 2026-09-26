@@ -1,45 +1,39 @@
 import {
   ARR_REPEAT_MS,
   DAS_DELAY_MS,
-  LINES_PER_LEVEL,
   LOCK_DELAY_MS,
   MAX_FRAME_MS,
-  MAX_LOCK_RESETS,
-  MESSAGE_HOLD_MS,
-  NEXT_QUEUE_SIZE,
   SOFT_DROP_FACTOR,
-  getDifficultyOption,
 } from "@/constants";
 import type {
   GameAction,
   GameInput,
   GameState,
   HorizontalDirection,
-  TetrominoType,
 } from "@/types";
-import { clearRows, findFullRows, lockCells } from "./board";
 import {
   IDLE_MESSAGE,
-  getLineClearMessage,
+  hardDrop,
   hasStartInput,
+  holdPiece,
+  lockActivePiece,
   pauseGame,
   resumeGame,
+  rotateActive,
   startGame,
-  topOut,
+  tryShift,
 } from "./game-flow";
 import { getGravityDelayMs } from "./gravity";
 import { createInitialGameState } from "./initial-game-state";
-import { drawBagPieces } from "./random-bag";
-import { getComboBonus, getDropScore, getLineClearAward } from "./scoring";
-import {
-  canPlacePiece,
-  createSpawnPiece,
-  getGhostY,
-  getPieceCells,
-  movePiece,
-  tryRotate,
-} from "./tetromino";
+import { getDropScore } from "./scoring";
+import { canPlacePiece, getGhostY, movePiece } from "./tetromino";
 
+/**
+ * Advances the simulation by one frame. The update is a pipeline of pure
+ * GameState -> GameState steps: buffered actions first, then DAS/ARR
+ * auto-shift, gravity, and lock delay. Each step guards on phase and the
+ * active piece, so no step needs to know how the previous one mutated.
+ */
 export function updateGameState(
   previous: GameState,
   input: GameInput,
@@ -63,267 +57,193 @@ export function updateGameState(
 
   const frameMs = Math.min(deltaMs, MAX_FRAME_MS);
   const startedFromReady = previous.phase === "ready";
-  const state = startedFromReady ? startGame(previous) : previous;
+  let state = startedFromReady ? startGame(previous) : previous;
+  state = tickTimers(state, frameMs);
+
   const actions: readonly GameAction[] = startedFromReady
     ? input.actions.filter((action): boolean => action !== "pause")
     : input.actions;
-  const option = getDifficultyOption(state.difficulty);
-
-  let board = state.board;
-  let active = state.active;
-  let hold = state.hold;
-  let holdUsed = state.holdUsed;
-  let nextQueue = state.nextQueue;
-  let bag = state.bag;
-  let rngSeed = state.rngSeed;
-  let fallAccumulatorMs = state.fallAccumulatorMs;
-  let lockTimerMs = state.lockTimerMs;
-  let lockResets = state.lockResets;
-  let dasDirection: HorizontalDirection = state.dasDirection;
-  let dasTimerMs = state.dasTimerMs;
-  let arrTimerMs = state.arrTimerMs;
-  let combo = state.combo;
-  let backToBack = state.backToBack;
-  let stats = state.stats;
-  let message = state.message;
-  let messageTimerMs = Math.max(state.messageTimerMs - frameMs, 0);
-
-  let softDropCells = 0;
-  let hardDropCells = 0;
-  let moved = false;
-  let rotated = false;
-  let locked = false;
-  let clearedRows = 0;
-  let backToBackApplied = false;
-
-  function composeState(): GameState {
-    return {
-      ...state,
-      active,
-      arrTimerMs,
-      backToBack,
-      bag,
-      board,
-      combo,
-      dasDirection,
-      dasTimerMs,
-      fallAccumulatorMs,
-      ghostY: active === null ? 0 : getGhostY(board, active),
-      hold,
-      holdUsed,
-      lockResets,
-      lockTimerMs,
-      message,
-      messageTimerMs,
-      nextQueue,
-      rngSeed,
-      stats: { ...stats, elapsedMs: stats.elapsedMs + frameMs },
-    };
-  }
-
-  function spawnPiece(type: TetrominoType): boolean {
-    const spawned = createSpawnPiece(type);
-    if (!canPlacePiece(board, spawned)) {
-      return false;
-    }
-    active = spawned;
-    fallAccumulatorMs = 0;
-    lockTimerMs = 0;
-    lockResets = 0;
-    dasTimerMs = 0;
-    arrTimerMs = 0;
-    return true;
-  }
-
-  function takeNextPiece(): TetrominoType | null {
-    const [type, ...rest] = nextQueue;
-    if (type === undefined) {
-      return null;
-    }
-    const draw = drawBagPieces(bag, rngSeed, NEXT_QUEUE_SIZE - rest.length);
-    bag = draw.bag;
-    rngSeed = draw.rngSeed;
-    nextQueue = [...rest, ...draw.pieces];
-    return type;
-  }
-
+  const lockedBefore = state.stats.piecesLocked;
   for (const action of actions) {
     if (action === "pause") {
-      return pauseGame(composeState());
+      return finalizeFrame(pauseGame(state));
     }
-    if (locked || active === null) {
+    state = applyAction(state, action);
+    if (state.phase !== "running") {
+      return finalizeFrame(state);
+    }
+    if (state.stats.piecesLocked !== lockedBefore) {
+      // A hard drop locked the piece; the spawned successor waits for the
+      // next frame, and any remaining buffered actions go with it.
       break;
     }
-    switch (action) {
-      case "hold": {
-        if (holdUsed) {
-          break;
-        }
-        const activeType = active.type;
-        const incoming = hold ?? takeNextPiece();
-        if (incoming === null) {
-          break;
-        }
-        hold = activeType;
-        holdUsed = true;
-        stats = { ...stats, holds: stats.holds + 1 };
-        if (!spawnPiece(incoming)) {
-          active = null;
-          return topOut(composeState());
-        }
-        moved = true;
-        break;
-      }
-      case "rotate-ccw":
-      case "rotate-cw": {
-        const rotation = tryRotate(
-          board,
-          active,
-          action === "rotate-cw" ? 1 : -1,
-        );
-        if (rotation === null) {
-          break;
-        }
-        active = rotation;
-        rotated = true;
-        stats = { ...stats, rotates: stats.rotates + 1 };
-        break;
-      }
-      case "hard-drop": {
-        const ghostY = getGhostY(board, active);
-        hardDropCells += Math.max(ghostY - active.y, 0);
-        active = { ...active, y: ghostY };
-        locked = true;
-        stats = { ...stats, hardDrops: stats.hardDrops + 1 };
-        break;
-      }
-    }
   }
 
-  if (!locked && active !== null) {
-    const direction: HorizontalDirection =
-      input.left === input.right ? 0 : input.right ? 1 : -1;
-    if (direction === 0) {
-      dasDirection = 0;
-      dasTimerMs = 0;
+  if (state.stats.piecesLocked === lockedBefore) {
+    state = updateDas(state, input, frameMs);
+    state = updateGravity(state, input, frameMs);
+    state = updateLockDelay(state, frameMs);
+  }
+  return finalizeFrame(applyIdleMessage(state));
+}
+
+function applyAction(state: GameState, action: GameAction): GameState {
+  switch (action) {
+    case "hard-drop":
+      return hardDrop(state);
+    case "hold":
+      return holdPiece(state);
+    case "pause":
+      // Drained by updateGameState before reaching this point.
+      return state;
+    case "rotate-ccw":
+      return rotateActive(state, -1);
+    case "rotate-cw":
+      return rotateActive(state, 1);
+  }
+}
+
+function tickTimers(state: GameState, frameMs: number): GameState {
+  return {
+    ...state,
+    messageTimerMs: Math.max(state.messageTimerMs - frameMs, 0),
+    stats: { ...state.stats, elapsedMs: state.stats.elapsedMs + frameMs },
+  };
+}
+
+/**
+ * DAS/ARR horizontal auto-shift: an initial move on press, then repeats once
+ * the delayed auto-shift delay has charged, at the auto-repeat rate.
+ */
+function updateDas(
+  state: GameState,
+  input: GameInput,
+  frameMs: number,
+): GameState {
+  if (state.active === null) {
+    return state;
+  }
+  const direction: HorizontalDirection =
+    input.left === input.right ? 0 : input.right ? 1 : -1;
+
+  if (direction === 0) {
+    if (state.dasDirection === 0 && state.dasTimerMs === 0 && state.arrTimerMs === 0) {
+      return state;
+    }
+    return { ...state, arrTimerMs: 0, dasDirection: 0, dasTimerMs: 0 };
+  }
+
+  if (direction !== state.dasDirection) {
+    return tryShift(
+      { ...state, arrTimerMs: 0, dasDirection: direction, dasTimerMs: 0 },
+      direction,
+    );
+  }
+
+  const dasTimerMs = state.dasTimerMs + frameMs;
+  if (dasTimerMs < DAS_DELAY_MS) {
+    return { ...state, dasTimerMs };
+  }
+
+  let arrTimerMs = state.arrTimerMs + frameMs;
+  let shifted = state;
+  while (arrTimerMs >= ARR_REPEAT_MS) {
+    arrTimerMs -= ARR_REPEAT_MS;
+    const next = tryShift(shifted, direction);
+    if (next === shifted) {
+      // Blocked by wall or stack; stop consuming repeat time.
       arrTimerMs = 0;
-    } else if (direction !== dasDirection) {
-      dasDirection = direction;
-      dasTimerMs = 0;
-      arrTimerMs = 0;
-      const shifted = movePiece(active, direction, 0);
-      if (canPlacePiece(board, shifted)) {
-        active = shifted;
-        moved = true;
-        stats = { ...stats, moves: stats.moves + 1 };
-      }
-    } else {
-      dasTimerMs += frameMs;
-      if (dasTimerMs >= DAS_DELAY_MS) {
-        arrTimerMs += frameMs;
-        while (arrTimerMs >= ARR_REPEAT_MS) {
-          arrTimerMs -= ARR_REPEAT_MS;
-          const shifted = movePiece(active, direction, 0);
-          if (!canPlacePiece(board, shifted)) {
-            arrTimerMs = 0;
-            break;
+      break;
+    }
+    shifted = next;
+  }
+  return { ...shifted, arrTimerMs, dasTimerMs };
+}
+
+/**
+ * Gravity, accumulated against the level's delay. Soft drop divides the
+ * delay and scores one point per dropped cell as the cells are earned.
+ */
+function updateGravity(
+  state: GameState,
+  input: GameInput,
+  frameMs: number,
+): GameState {
+  if (state.active === null) {
+    return state;
+  }
+  const delayMs =
+    getGravityDelayMs(state.stats.level) /
+    (input.softDrop ? SOFT_DROP_FACTOR : 1);
+
+  let fallAccumulatorMs = state.fallAccumulatorMs + frameMs;
+  let current = state;
+  while (fallAccumulatorMs >= delayMs) {
+    const piece = current.active;
+    if (piece === null) {
+      break;
+    }
+    const dropped = movePiece(piece, 0, 1);
+    if (!canPlacePiece(current.board, dropped)) {
+      break;
+    }
+    current = {
+      ...current,
+      active: dropped,
+      stats: input.softDrop
+        ? {
+            ...current.stats,
+            score: current.stats.score + getDropScore(1, "soft"),
           }
-          active = shifted;
-          moved = true;
-          stats = { ...stats, moves: stats.moves + 1 };
-        }
-      }
-    }
-  }
-
-  if (!locked && active !== null) {
-    const delayMs =
-      getGravityDelayMs(stats.level) / (input.softDrop ? SOFT_DROP_FACTOR : 1);
-    fallAccumulatorMs += frameMs;
-    while (fallAccumulatorMs >= delayMs) {
-      const dropped = movePiece(active, 0, 1);
-      if (!canPlacePiece(board, dropped)) {
-        break;
-      }
-      active = dropped;
-      moved = true;
-      fallAccumulatorMs -= delayMs;
-      if (input.softDrop) {
-        softDropCells += 1;
-      }
-    }
-    if (!canPlacePiece(board, movePiece(active, 0, 1))) {
-      fallAccumulatorMs = 0;
-    }
-  }
-
-  if (!locked && active !== null) {
-    const grounded = !canPlacePiece(board, movePiece(active, 0, 1));
-    if (grounded) {
-      if (moved || rotated) {
-        if (lockResets < MAX_LOCK_RESETS) {
-          lockTimerMs = 0;
-          lockResets += 1;
-        }
-      }
-      lockTimerMs += frameMs;
-      if (lockTimerMs >= LOCK_DELAY_MS) {
-        locked = true;
-      }
-    } else {
-      lockTimerMs = 0;
-    }
-  }
-
-  if (locked && active !== null) {
-    board = lockCells(board, getPieceCells(active), active.type);
-    const fullRows = findFullRows(board);
-    clearedRows = fullRows.length;
-    combo = clearedRows > 0 ? combo + 1 : 0;
-    let award = 0;
-    if (clearedRows > 0) {
-      backToBackApplied = backToBack && clearedRows === 4;
-      award += getLineClearAward(
-        clearedRows,
-        stats.level,
-        backToBackApplied,
-        option.multiplier,
-      );
-      award += getComboBonus(combo, stats.level, option.multiplier);
-      backToBack = clearedRows === 4;
-      board = clearRows(board, fullRows);
-    }
-    const lines = stats.lines + clearedRows;
-    const level = option.startLevel + Math.floor(lines / LINES_PER_LEVEL);
-    stats = {
-      ...stats,
-      lines,
-      level,
-      piecesLocked: stats.piecesLocked + 1,
-      tetrises: stats.tetrises + (clearedRows === 4 ? 1 : 0),
-      score:
-        stats.score +
-        award +
-        getDropScore(softDropCells, "soft") +
-        getDropScore(hardDropCells, "hard"),
+        : current.stats,
     };
-    holdUsed = false;
-    const nextType = takeNextPiece();
-    if (nextType === null || !spawnPiece(nextType)) {
-      active = null;
-      return topOut(composeState());
-    }
+    fallAccumulatorMs -= delayMs;
   }
 
-  if (clearedRows > 0) {
-    message = getLineClearMessage(clearedRows, backToBackApplied, combo);
-    if (stats.level > state.stats.level) {
-      message += ` Level ${stats.level}.`;
-    }
-    messageTimerMs = MESSAGE_HOLD_MS;
-  } else if (messageTimerMs <= 0) {
-    message = IDLE_MESSAGE;
+  if (
+    current.active !== null &&
+    !canPlacePiece(current.board, movePiece(current.active, 0, 1))
+  ) {
+    // Grounded: leftover credit must not carry into the next fall.
+    fallAccumulatorMs = 0;
   }
+  return { ...current, fallAccumulatorMs };
+}
 
-  return composeState();
+/**
+ * Lock delay: a grounded piece locks after LOCK_DELAY_MS. Successful moves
+ * and rotations reset the timer (capped by MAX_LOCK_RESETS upstream in
+ * afterPieceMoved), so sliding along the stack buys time but never forever.
+ */
+function updateLockDelay(state: GameState, frameMs: number): GameState {
+  const active = state.active;
+  if (active === null) {
+    return state;
+  }
+  const grounded = !canPlacePiece(state.board, movePiece(active, 0, 1));
+  if (!grounded) {
+    return state.lockTimerMs === 0 ? state : { ...state, lockTimerMs: 0 };
+  }
+  const lockTimerMs = state.lockTimerMs + frameMs;
+  if (lockTimerMs >= LOCK_DELAY_MS) {
+    return lockActivePiece(state);
+  }
+  return { ...state, lockTimerMs };
+}
+
+function applyIdleMessage(state: GameState): GameState {
+  if (state.phase !== "running" || state.messageTimerMs > 0) {
+    return state;
+  }
+  if (state.message === IDLE_MESSAGE) {
+    return state;
+  }
+  return { ...state, message: IDLE_MESSAGE };
+}
+
+/** Keeps the cached ghost projection in sync with board and piece. */
+function finalizeFrame(state: GameState): GameState {
+  const ghostY =
+    state.active === null ? 0 : getGhostY(state.board, state.active);
+  return state.ghostY === ghostY ? state : { ...state, ghostY };
 }

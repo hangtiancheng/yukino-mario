@@ -12,11 +12,17 @@ export { exhaustiveCheck } from "./exhaustive-check";
 export {
   IDLE_MESSAGE,
   getLineClearMessage,
+  hardDrop,
   hasStartInput,
+  holdPiece,
+  lockActivePiece,
   pauseGame,
   resumeGame,
+  rotateActive,
+  spawnNextPiece,
   startGame,
   topOut,
+  tryShift,
 } from "./game-flow";
 export {
   createIdleInput,

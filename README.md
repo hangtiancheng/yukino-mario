@@ -32,6 +32,21 @@ A guideline-style falling-block game. Stack tetrominoes, chase TETRIS lines and 
 
 Touch controls appear automatically on small screens. A distraction-free fullscreen mode is available at `/fullscreen`.
 
+## Scoring
+
+| Clear        | Base × level × tier multiplier   |
+| ------------ | -------------------------------- |
+| Single       | 100                              |
+| Double       | 300                              |
+| Triple       | 500                              |
+| Tetris       | 800                              |
+| Back-to-back | ×1.5 on chained Tetrises         |
+| Combo        | +50 × (combo − 1) × level × multiplier |
+| Soft drop    | +1 per cell                      |
+| Hard drop    | +2 per cell                      |
+
+Level rises every 10 cleared lines; gravity follows the guideline curve `(0.8 − (level − 1) × 0.007)^(level − 1)` seconds per row.
+
 ---
 
 ## Tech Stack

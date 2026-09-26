@@ -254,7 +254,19 @@ export const PREVIEW_SHAPES: Record<TetrominoType, readonly CellOffset[]> = {
 // downward), keyed by "from-to" rotation state. The O piece never kicks.
 export type KickOffset = readonly [dx: number, dy: number];
 
-const JLSTZ_KICKS: Readonly<Record<string, readonly KickOffset[]>> = {
+// Only the eight adjacent rotation transitions occur in practice; typing the
+// keys as a union keeps the lookup tables total (no runtime fallback).
+export type KickKey =
+  | "0-1"
+  | "0-3"
+  | "1-0"
+  | "1-2"
+  | "2-1"
+  | "2-3"
+  | "3-0"
+  | "3-2";
+
+const JLSTZ_KICKS: Readonly<Record<KickKey, readonly KickOffset[]>> = {
   "0-1": [
     [0, 0],
     [-1, 0],
@@ -313,7 +325,7 @@ const JLSTZ_KICKS: Readonly<Record<string, readonly KickOffset[]>> = {
   ],
 };
 
-const I_KICKS: Readonly<Record<string, readonly KickOffset[]>> = {
+const I_KICKS: Readonly<Record<KickKey, readonly KickOffset[]>> = {
   "0-1": [
     [0, 0],
     [-2, 0],
@@ -371,8 +383,6 @@ const I_KICKS: Readonly<Record<string, readonly KickOffset[]>> = {
     [2, 1],
   ],
 };
-
-const FALLBACK_KICKS: readonly KickOffset[] = [[0, 0]];
 
 export function getKickOffsets(
   type: TetrominoType,
@@ -380,5 +390,7 @@ export function getKickOffsets(
   to: RotationState,
 ): readonly KickOffset[] {
   const table = type === "I" ? I_KICKS : JLSTZ_KICKS;
-  return table[`${from}-${to}`] ?? FALLBACK_KICKS;
+  // tryRotate only ever asks for adjacent transitions, so the key is total.
+  const key = `${from}-${to}` as KickKey;
+  return table[key];
 }
