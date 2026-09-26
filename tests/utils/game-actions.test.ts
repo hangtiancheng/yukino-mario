@@ -195,9 +195,11 @@ describe("spawnNextPiece", (): void => {
 
 describe("lock-delay move resets", (): void => {
   function groundedO(): GameState {
-    const board = fillRowExcept(createEmptyBoard(), BOARD_ROWS - 1, [
-      2, 3, 4, 5, 6, 7,
-    ]);
+    const board = fillRowExcept(
+      createEmptyBoard(),
+      BOARD_ROWS - 1,
+      [2, 3, 4, 5, 6, 7],
+    );
     return {
       ...running(),
       active: { type: "O", rotation: 0, x: 4, y: BOARD_ROWS - 2 },

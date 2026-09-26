@@ -127,7 +127,11 @@ function updateDas(
     input.left === input.right ? 0 : input.right ? 1 : -1;
 
   if (direction === 0) {
-    if (state.dasDirection === 0 && state.dasTimerMs === 0 && state.arrTimerMs === 0) {
+    if (
+      state.dasDirection === 0 &&
+      state.dasTimerMs === 0 &&
+      state.arrTimerMs === 0
+    ) {
       return state;
     }
     return { ...state, arrTimerMs: 0, dasDirection: 0, dasTimerMs: 0 };

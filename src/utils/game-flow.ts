@@ -191,7 +191,11 @@ export function lockActivePiece(state: GameState): GameState {
     return state;
   }
   const option = getDifficultyOption(state.difficulty);
-  const lockedBoard = lockCells(state.board, getPieceCells(active), active.type);
+  const lockedBoard = lockCells(
+    state.board,
+    getPieceCells(active),
+    active.type,
+  );
   const fullRows = findFullRows(lockedBoard);
   const clearedRows = fullRows.length;
   const combo = clearedRows > 0 ? state.combo + 1 : 0;

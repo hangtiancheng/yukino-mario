@@ -257,14 +257,7 @@ export type KickOffset = readonly [dx: number, dy: number];
 // Only the eight adjacent rotation transitions occur in practice; typing the
 // keys as a union keeps the lookup tables total (no runtime fallback).
 export type KickKey =
-  | "0-1"
-  | "0-3"
-  | "1-0"
-  | "1-2"
-  | "2-1"
-  | "2-3"
-  | "3-0"
-  | "3-2";
+  "0-1" | "0-3" | "1-0" | "1-2" | "2-1" | "2-3" | "3-0" | "3-2";
 
 const JLSTZ_KICKS: Readonly<Record<KickKey, readonly KickOffset[]>> = {
   "0-1": [
