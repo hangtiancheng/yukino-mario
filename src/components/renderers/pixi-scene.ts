@@ -1,68 +1,31 @@
-import { Container } from "pixi.js";
+import { Container, Graphics, Text } from "pixi.js";
 
-import type { Coin, Enemy, GameState, Particle, Platform } from "@/types";
-import { filterVisibleRects } from "@/utils";
 import {
-  createPixiBackground,
-  destroyPixiBackground,
-  syncPixiBackground,
-} from "./pixi-background";
-import type { PixiBackgroundState } from "./pixi-background";
-import {
-  drawCoin,
-  drawEnemy,
-  drawParticle,
-  drawPlatform,
-  drawPlayer,
-  getEntityId,
-  getParticleId,
-  getPlayerKey,
-  isVisibleCoin,
-} from "./pixi-draw";
+  HOLD_LABEL_POSITION,
+  NEXT_LABEL_POSITION,
+  tetrisTheme,
+} from "@/constants";
+import type { StagePoint } from "@/constants";
+import type { GameState } from "@/types";
+import { collectRenderCells, getRenderCellKey } from "@/utils";
+import type { RenderCell } from "@/utils";
+import { drawRenderCell, drawStageFrame } from "./pixi-draw";
 import { createGraphicsPool } from "./pixi-pool";
 import type { GraphicsPool } from "./pixi-pool";
 
 interface PixiSceneState {
-  background: PixiBackgroundState;
-  coinPool: GraphicsPool<Coin>;
-  enemyPool: GraphicsPool<Enemy>;
-  particlePool: GraphicsPool<Particle>;
-  platformPool: GraphicsPool<Platform>;
-  playerPool: GraphicsPool<GameState>;
-  world: Container;
+  cellPool: GraphicsPool<RenderCell>;
 }
 
 const pixiSceneStates = new WeakMap<Container, PixiSceneState>();
 
-export function renderPixiScene(
-  scene: Container,
-  state: GameState,
-  reducedMotion: boolean,
-): void {
+export function renderPixiScene(scene: Container, state: GameState): void {
   const sceneState = getPixiSceneState(scene);
-  sceneState.world.x = -state.cameraX;
-  syncPixiBackground(sceneState.background, state.cameraX, reducedMotion);
-  sceneState.platformPool.sync(
-    filterVisibleRects(state.platforms, state.cameraX),
-    getEntityId,
-    drawPlatform,
+  sceneState.cellPool.sync(
+    collectRenderCells(state),
+    getRenderCellKey,
+    drawRenderCell,
   );
-  sceneState.coinPool.sync(
-    filterVisibleRects(state.coins, state.cameraX).filter(isVisibleCoin),
-    getEntityId,
-    drawCoin,
-  );
-  sceneState.enemyPool.sync(
-    filterVisibleRects(state.enemies, state.cameraX),
-    getEntityId,
-    drawEnemy,
-  );
-  sceneState.particlePool.sync(
-    reducedMotion ? state.particles.slice(0, 4) : state.particles,
-    getParticleId,
-    drawParticle,
-  );
-  sceneState.playerPool.sync([state], getPlayerKey, drawPlayer);
 }
 
 export function destroyPixiScene(scene: Container): void {
@@ -70,12 +33,7 @@ export function destroyPixiScene(scene: Container): void {
   if (sceneState === undefined) {
     return;
   }
-  destroyPixiBackground(sceneState.background);
-  sceneState.platformPool.destroy();
-  sceneState.coinPool.destroy();
-  sceneState.enemyPool.destroy();
-  sceneState.particlePool.destroy();
-  sceneState.playerPool.destroy();
+  sceneState.cellPool.destroy();
   pixiSceneStates.delete(scene);
 }
 
@@ -84,18 +42,32 @@ function getPixiSceneState(scene: Container): PixiSceneState {
   if (existingState !== undefined) {
     return existingState;
   }
-  const background = createPixiBackground();
   const world = new Container();
-  scene.addChild(background.container, world);
-  const sceneState: PixiSceneState = {
-    background,
-    coinPool: createGraphicsPool(world),
-    enemyPool: createGraphicsPool(world),
-    particlePool: createGraphicsPool(world),
-    platformPool: createGraphicsPool(world),
-    playerPool: createGraphicsPool(world),
-    world,
-  };
+  const frame = new Graphics();
+  drawStageFrame(frame);
+  world.addChild(
+    frame,
+    createPanelLabel("Hold", HOLD_LABEL_POSITION),
+    createPanelLabel("Next", NEXT_LABEL_POSITION),
+  );
+  scene.addChild(world);
+  const sceneState: PixiSceneState = { cellPool: createGraphicsPool(world) };
   pixiSceneStates.set(scene, sceneState);
   return sceneState;
+}
+
+function createPanelLabel(text: string, position: StagePoint): Text {
+  const label = new Text({
+    style: {
+      fill: tetrisTheme.labelText,
+      fontFamily:
+        '"Avenir Next", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.3,
+    },
+    text,
+  });
+  label.position.set(position.x, position.y);
+  return label;
 }

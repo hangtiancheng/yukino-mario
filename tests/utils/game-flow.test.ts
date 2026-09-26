@@ -1,97 +1,65 @@
 import { describe, expect, it } from "vitest";
 
-import { firstLevel } from "@/constants";
-import type { GameInput, GameState, Platform } from "@/types";
-import { loseLife } from "@/utils/game-flow";
-import { createInitialGameState, updateGameState } from "@/utils";
+import type { GameInput } from "@/types";
+import {
+  createInitialGameState,
+  getLineClearMessage,
+  hasStartInput,
+  pauseGame,
+  resumeGame,
+  startGame,
+  topOut,
+} from "@/utils";
 
 const idleInput: GameInput = {
-  jump: false,
   left: false,
-  restart: false,
   right: false,
+  softDrop: false,
+  restart: false,
+  actions: [],
 };
 
-const safePlatform: Platform = {
-  height: 32,
-  id: "safe-local-ground",
-  tone: "ground",
-  width: 240,
-  x: 700,
-  y: 460,
-};
-
-function createRunningState(): GameState {
-  return {
-    ...createInitialGameState(firstLevel, "medium"),
-    cameraX: 320,
-    phase: "running",
-    platforms: [...firstLevel.platforms, safePlatform],
-    player: {
-      coyoteMs: 0,
-      facing: -1,
-      grounded: false,
-      height: 48,
-      invulnerableMs: 0,
-      jumpBufferMs: 90,
-      jumpHeld: true,
-      velocity: { x: 120, y: 500 },
-      width: 34,
-      x: 780,
-      y: 520,
-    },
-    stats: {
-      ...createInitialGameState(firstLevel, "medium").stats,
-      lives: 2,
-    },
-  };
-}
-
-describe("loseLife", (): void => {
-  it("revives locally when lives remain", (): void => {
-    const state = createRunningState();
-    const nextState = loseLife(state, "Try again.");
-    expect(nextState.phase).toBe("running");
-    expect(nextState.stats.lives).toBe(1);
-    expect(nextState.player.x).toBe(state.player.x);
-    expect(nextState.player.y).toBe(safePlatform.y - state.player.height);
-    expect(nextState.player.y).not.toBe(firstLevel.spawn.y);
-    expect(nextState.player.velocity).toEqual({ x: 0, y: 0 });
-    expect(nextState.player.grounded).toBe(true);
+describe("phase transitions", (): void => {
+  it("starts the run with a guiding message", (): void => {
+    const state = startGame(createInitialGameState("medium", 1));
+    expect(state.phase).toBe("running");
+    expect(state.message).toMatch(/stack/i);
+    expect(state.messageTimerMs).toBe(2_400);
   });
 
-  it("updates camera around the local revive position", (): void => {
-    const nextState = loseLife(createRunningState(), "Try again.");
-    expect(nextState.cameraX).toBeGreaterThan(300);
+  it("pauses and resumes", (): void => {
+    const running = startGame(createInitialGameState("medium", 1));
+    const paused = pauseGame(running);
+    expect(paused.phase).toBe("paused");
+    expect(resumeGame(paused).phase).toBe("running");
   });
 
-  it("keeps terminal damage as game over", (): void => {
-    const state = {
-      ...createRunningState(),
-      stats: { ...createRunningState().stats, lives: 1 },
-    };
-    const nextState = loseLife(state, "Try again.");
-    expect(nextState.phase).toBe("lost");
-    expect(nextState.stats.lives).toBe(0);
-    expect(nextState.message).toBe("Game over. Press R to restart.");
-  });
-
-  it("grants invulnerability frames after a revive", (): void => {
-    const nextState = loseLife(createRunningState(), "Try again.");
-    expect(nextState.player.invulnerableMs).toBe(1_500);
-    expect(nextState.messageTimerMs).toBe(2_400);
+  it("marks a top out as lost", (): void => {
+    const lost = topOut(startGame(createInitialGameState("medium", 1)));
+    expect(lost.phase).toBe("lost");
+    expect(lost.message).toMatch(/top out/i);
   });
 });
 
-describe("updateGameState restart", (): void => {
-  it("restarts at the level spawn instead of the local revive point", (): void => {
-    const nextState = updateGameState(
-      createRunningState(),
-      { ...idleInput, restart: true },
-      16,
-    );
-    expect(nextState.player.x).toBe(firstLevel.spawn.x);
-    expect(nextState.player.y).toBe(firstLevel.spawn.y);
-    expect(nextState.phase).toBe("ready");
+describe("hasStartInput", (): void => {
+  it("requires movement or a non-pause action", (): void => {
+    expect(hasStartInput(idleInput)).toBe(false);
+    expect(hasStartInput({ ...idleInput, actions: ["pause"] })).toBe(false);
+    expect(hasStartInput({ ...idleInput, actions: ["rotate-cw"] })).toBe(true);
+    expect(hasStartInput({ ...idleInput, left: true })).toBe(true);
+  });
+});
+
+describe("getLineClearMessage", (): void => {
+  it("labels each clear size", (): void => {
+    expect(getLineClearMessage(1, false, 1)).toBe("Single.");
+    expect(getLineClearMessage(2, false, 1)).toBe("Double!");
+    expect(getLineClearMessage(3, false, 1)).toBe("Triple!");
+    expect(getLineClearMessage(4, false, 1)).toBe("TETRIS!");
+  });
+
+  it("flags back-to-back TETRIS and combos", (): void => {
+    expect(getLineClearMessage(4, true, 1)).toBe("Back-to-back TETRIS!");
+    expect(getLineClearMessage(2, false, 3)).toBe("Double! Combo x3.");
   });
 });

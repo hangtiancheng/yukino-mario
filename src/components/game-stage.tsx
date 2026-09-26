@@ -38,11 +38,15 @@ export function GameStage({
     stageRef.current?.focus({ preventScroll: true });
   }
 
+  function handleResume(): void {
+    input.press("pause");
+  }
+
   return (
     <div
       aria-describedby={descriptionId}
-      aria-label="Yukino Mario game stage"
-      className="relative max-w-full overflow-hidden rounded-4xl border-8 border-slate-950 bg-linear-to-b from-sky-400 via-cyan-200 to-amber-100 shadow-[14px_14px_0_rgb(15_23_42)] focus-visible:ring-8 focus-visible:ring-amber-200 focus-visible:outline-none"
+      aria-label="Yukino Tetris game stage"
+      className="border-line focus-visible:ring-clay focus-visible:ring-offset-paper relative max-w-full overflow-hidden rounded-[20px] border bg-linear-to-b from-[#fdfbf6] to-[#f2efe6] shadow-[0_24px_60px_-32px_rgba(32,30,26,0.45)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       onBlur={input.onBlur}
       onKeyDown={input.onKeyDown}
       onKeyUp={input.onKeyUp}
@@ -53,7 +57,9 @@ export function GameStage({
       tabIndex={0}
     >
       <p className="sr-only" id={descriptionId}>
-        Use arrow keys or A and D to move, Space or W to jump, and R to restart.
+        Use arrow keys or A and D to move, Up or X to rotate, Z to rotate
+        counter-clockwise, Space to hard drop, C to hold, P to pause, and R to
+        restart.
       </p>
       <GameRenderer
         reducedMotion={reducedMotion}
@@ -67,6 +73,7 @@ export function GameStage({
         <TransitionOverlay
           message={state.message}
           onRestart={onRestart}
+          onResume={handleResume}
           phase={state.phase}
         />
       )}

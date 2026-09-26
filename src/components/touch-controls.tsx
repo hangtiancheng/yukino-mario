@@ -2,8 +2,8 @@ import clsx from "clsx";
 import { useState } from "react";
 import type { PointerEvent, ReactElement, RefObject } from "react";
 
-import type { GameInput } from "@/types";
-import { setGameInputControl } from "@/utils";
+import type { GameAction, GameInput } from "@/types";
+import { pressGameAction, setGameInputControl } from "@/utils";
 import type { GameInputControl } from "@/utils";
 
 interface TouchControlsProps {
@@ -31,16 +31,18 @@ export function TouchControls({
       <div className="pointer-events-auto flex gap-3">
         <button
           aria-label="Restart run"
-          className={buttonClass("bg-slate-800")}
+          className={buttonClass("border-line bg-card text-ink")}
           onClick={onRestart}
           type="button"
         >
           R
         </button>
-        <TouchButton
-          control="jump"
+        <ActionButton action="hold" inputRef={inputRef} label="Hold" />
+        <ActionButton action="rotate-cw" inputRef={inputRef} label="Spin" />
+        <ActionButton
+          action="hard-drop"
           inputRef={inputRef}
-          label="Jump"
+          label="Drop"
           prominent
         />
       </div>
@@ -52,7 +54,6 @@ function TouchButton({
   control,
   inputRef,
   label,
-  prominent = false,
 }: TouchButtonProps): ReactElement {
   const [pressed, setPressedState] = useState<boolean>(false);
 
@@ -78,9 +79,7 @@ function TouchButton({
     <button
       aria-label={label}
       aria-pressed={pressed}
-      className={buttonClass(
-        prominent ? "bg-red-500" : "bg-amber-300 text-slate-950",
-      )}
+      className={buttonClass("border-line bg-card text-ink")}
       onPointerCancel={(event: PointerEvent<HTMLButtonElement>): void =>
         setPressed(event, false)
       }
@@ -100,8 +99,41 @@ function TouchButton({
   );
 }
 
+function ActionButton({
+  action,
+  inputRef,
+  label,
+  prominent = false,
+}: ActionButtonProps): ReactElement {
+  function handlePointerDown(event: PointerEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    inputRef.current = pressGameAction(inputRef.current, action);
+  }
+
+  return (
+    <button
+      aria-label={label}
+      className={buttonClass(
+        prominent
+          ? "border-clay-deep bg-clay-deep text-[#fdf9f2]"
+          : "border-line bg-card text-ink",
+      )}
+      onPointerDown={handlePointerDown}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
 interface TouchButtonProps {
   control: GameInputControl;
+  inputRef: RefObject<GameInput>;
+  label: string;
+}
+
+interface ActionButtonProps {
+  action: GameAction;
   inputRef: RefObject<GameInput>;
   label: string;
   prominent?: boolean;
@@ -109,7 +141,7 @@ interface TouchButtonProps {
 
 function buttonClass(tone: string): string {
   return clsx(
-    "h-16 min-w-16 touch-none rounded-2xl border-4 border-slate-950 px-4 text-sm font-black uppercase shadow-[5px_5px_0_rgb(15_23_42)] focus-visible:ring-4 focus-visible:ring-white focus-visible:outline-none",
+    "h-14 min-w-14 touch-none rounded-xl border px-3 text-sm font-semibold shadow-[0_3px_10px_-4px_rgba(32,30,26,0.35)] focus-visible:ring-2 focus-visible:ring-clay focus-visible:outline-none",
     tone,
   );
 }

@@ -1,77 +1,122 @@
 import { describe, expect, it } from "vitest";
 
-import { firstLevel } from "@/constants";
 import type { GameState } from "@/types";
-import { createInitialGameState, getAudioEvent } from "@/utils";
+import {
+  createInitialGameState,
+  getAudioEvent,
+  getToneProfiles,
+  startGame,
+} from "@/utils";
+import type { GameAudioEvent } from "@/utils";
 
-function makeRunningState(): GameState {
-  return { ...createInitialGameState(firstLevel, "medium"), phase: "running" };
+function makeRunning(): GameState {
+  return startGame(createInitialGameState("medium", 5));
 }
 
 describe("getAudioEvent", (): void => {
-  it("uses stomped enemy stats for stomp audio", (): void => {
-    const previous = createInitialGameState(firstLevel, "medium");
-    const current = {
-      ...previous,
-      stats: { ...previous.stats, stompedEnemies: 1 },
-    };
-    expect(getAudioEvent(previous, current)).toBe("stomp");
+  it("plays loss when the run ends", (): void => {
+    expect(
+      getAudioEvent(makeRunning(), { ...makeRunning(), phase: "lost" }),
+    ).toBe("loss");
   });
 
-  it("uses broken mario stats for break audio", (): void => {
-    const previous = createInitialGameState(firstLevel, "medium");
-    const current = {
-      ...previous,
-      stats: { ...previous.stats, marioBroken: 1 },
-    };
-    expect(getAudioEvent(previous, current)).toBe("break");
+  it("plays pause when pausing", (): void => {
+    expect(
+      getAudioEvent(makeRunning(), { ...makeRunning(), phase: "paused" }),
+    ).toBe("pause");
   });
 
-  it("plays loss when the run transitions to lost", (): void => {
-    const previous = makeRunningState();
-    const current: GameState = { ...previous, phase: "lost" };
-    expect(getAudioEvent(previous, current)).toBe("loss");
+  it("plays start when leaving the ready phase", (): void => {
+    const previous = createInitialGameState("medium", 5);
+    expect(getAudioEvent(previous, makeRunning())).toBe("start");
   });
 
-  it("plays hit when a life is lost and prioritises it over stomp", (): void => {
-    const previous = makeRunningState();
+  it("prioritises level-up over line clears", (): void => {
+    const base = makeRunning();
     const current: GameState = {
-      ...previous,
-      stats: {
-        ...previous.stats,
-        lives: previous.stats.lives - 1,
-        stompedEnemies: 1,
-      },
+      ...base,
+      stats: { ...base.stats, level: 4, lines: 10 },
     };
-    expect(getAudioEvent(previous, current)).toBe("hit");
+    expect(getAudioEvent(base, current)).toBe("level");
   });
 
-  it("plays coin when a coin is collected", (): void => {
-    const previous = makeRunningState();
+  it("plays tetris for a four-line clear", (): void => {
+    const base = makeRunning();
     const current: GameState = {
-      ...previous,
-      stats: { ...previous.stats, coinsCollected: 1 },
+      ...base,
+      stats: { ...base.stats, lines: 4, tetrises: 1 },
     };
-    expect(getAudioEvent(previous, current)).toBe("coin");
+    expect(getAudioEvent(base, current)).toBe("tetris");
   });
 
-  it("plays start when the game leaves the ready phase", (): void => {
-    const previous = createInitialGameState(firstLevel, "medium");
-    const current: GameState = { ...previous, phase: "running" };
-    expect(getAudioEvent(previous, current)).toBe("start");
+  it("plays clear for smaller line clears", (): void => {
+    const base = makeRunning();
+    const current: GameState = {
+      ...base,
+      stats: { ...base.stats, lines: 2 },
+    };
+    expect(getAudioEvent(base, current)).toBe("clear");
   });
 
-  it("plays jump only past the upward velocity threshold", (): void => {
-    const previous = makeRunningState();
-    const jumping: GameState = {
-      ...previous,
-      player: { ...previous.player, velocity: { x: 0, y: -600 } },
+  it("plays drop for hard drops even when the piece locks", (): void => {
+    const base = makeRunning();
+    const current: GameState = {
+      ...base,
+      stats: { ...base.stats, hardDrops: 1, piecesLocked: 1 },
     };
-    expect(getAudioEvent(previous, jumping)).toBe("jump");
-    const drifting: GameState = {
-      ...previous,
-      player: { ...previous.player, velocity: { x: 0, y: -400 } },
+    expect(getAudioEvent(base, current)).toBe("drop");
+  });
+
+  it("plays hold when a piece is held", (): void => {
+    const base = makeRunning();
+    const current: GameState = {
+      ...base,
+      stats: { ...base.stats, holds: 1 },
     };
-    expect(getAudioEvent(previous, drifting)).toBeNull();
+    expect(getAudioEvent(base, current)).toBe("hold");
+  });
+
+  it("plays lock when a piece lands", (): void => {
+    const base = makeRunning();
+    const current: GameState = {
+      ...base,
+      stats: { ...base.stats, piecesLocked: 1 },
+    };
+    expect(getAudioEvent(base, current)).toBe("lock");
+  });
+
+  it("plays rotate over move when both happen", (): void => {
+    const base = makeRunning();
+    const current: GameState = {
+      ...base,
+      stats: { ...base.stats, moves: 1, rotates: 1 },
+    };
+    expect(getAudioEvent(base, current)).toBe("rotate");
+  });
+
+  it("returns null when nothing happened", (): void => {
+    expect(getAudioEvent(makeRunning(), makeRunning())).toBeNull();
+  });
+});
+
+describe("getToneProfiles", (): void => {
+  const events: readonly GameAudioEvent[] = [
+    "clear",
+    "drop",
+    "hold",
+    "level",
+    "lock",
+    "loss",
+    "move",
+    "pause",
+    "rotate",
+    "start",
+    "tetris",
+  ];
+
+  it("provides profiles for every event", (): void => {
+    for (const event of events) {
+      expect(getToneProfiles(event).length).toBeGreaterThan(0);
+    }
   });
 });

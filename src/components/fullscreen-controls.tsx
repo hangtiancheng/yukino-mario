@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 export function FullscreenControls(): ReactElement {
   return (
     <Link
-      className="rounded-full border-4 border-slate-950 bg-white px-5 py-2 text-xs font-black tracking-[0.2em] text-slate-950 uppercase shadow-[5px_5px_0_rgb(15_23_42)]"
+      className="bg-clay-deep hover:bg-clay focus-visible:ring-clay focus-visible:ring-offset-paper rounded-md px-4 py-2 text-sm font-semibold text-[#fdf9f2] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       to="/fullscreen"
     >
       Open fullscreen

@@ -23,18 +23,16 @@ export function RendererSelector({
   onChange,
 }: RendererSelectorProps): ReactElement {
   return (
-    <div className="rounded-2xl border-2 border-violet-300/60 bg-slate-900 p-3">
-      <p className="mb-2 text-[0.6rem] font-black tracking-[0.3em] text-violet-200 uppercase">
-        Renderer
-      </p>
-      <div className="flex gap-2">
+    <div className="border-line bg-card rounded-xl border p-4">
+      <p className="text-ink text-sm font-medium">Renderer</p>
+      <div className="mt-3 flex gap-2">
         {rendererOptions.map((option: RendererOption): ReactElement => (
           <button
             className={clsx(
-              "rounded-lg border px-3 py-1.5 text-xs font-black tracking-[0.14em] uppercase transition",
+              "rounded-md border px-3 py-2 text-sm font-semibold transition-colors",
               option.value === selectedRenderer
-                ? "border-violet-300 bg-violet-300 text-slate-950"
-                : "border-violet-300/40 text-violet-100 hover:bg-violet-300/20",
+                ? "border-clay bg-clay/10 text-ink"
+                : "border-line bg-paper text-ink hover:border-clay/60",
             )}
             key={option.value}
             onClick={(): void => onChange(option.value)}

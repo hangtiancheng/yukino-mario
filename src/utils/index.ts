@@ -1,43 +1,50 @@
 export { getAudioEvent, getToneProfiles } from "./audio-events";
 export type { GameAudioEvent, ToneProfile } from "./audio-events";
-export { getTargetCameraX, smoothCameraX } from "./camera";
 export {
-  couldCollideHorizontally,
-  getCollisionCandidates,
-} from "./collision-candidates";
-export { resolveEnemyContacts } from "./enemy-contact";
-export { updateEnemies } from "./enemy-motion";
-export { createSegmentEnemy } from "./enemy-variation";
+  canPlaceCells,
+  clearRows,
+  createEmptyBoard,
+  createEmptyRow,
+  findFullRows,
+  lockCells,
+} from "./board";
 export { exhaustiveCheck } from "./exhaustive-check";
-export { collectCoins, createCoins, createPlayer } from "./game-entities";
 export {
-  getProgressMessage,
-  hasMovementInput,
-  loseLife,
-  removeBumpedPlatform,
+  IDLE_MESSAGE,
+  getLineClearMessage,
+  hasStartInput,
+  pauseGame,
+  resumeGame,
   startGame,
+  topOut,
 } from "./game-flow";
-export { createIdleInput, setGameInputControl } from "./game-input";
-export { extendInfiniteWorld } from "./infinite-map";
-export { carryPlayerByPlatforms, updatePlatforms } from "./platform-motion";
 export {
-  getInvulnerabilityOpacity,
-  getPlayerAnimation,
-} from "./player-animation";
-export {
-  createSpawns,
-  getPlatformCenter,
-  spawnParticles,
-  updateParticles,
-} from "./particles";
-export { clamp, intersects } from "./rect";
-export { getRunDistance, getWeightedScore } from "./score";
-export { safelyUpdateGameState } from "./safe-game-update";
-export { buildPlatformIndex, getPlatformsInRange } from "./spatial-index";
-export type { PlatformIndex } from "./spatial-index";
-export { filterVisibleRects } from "./viewport";
-export { updateGameState } from "./game-state";
-export { createInitialGameState } from "./initial-game-state";
-export { updatePlayer } from "./player-motion";
+  createIdleInput,
+  drainGameActions,
+  pressGameAction,
+  setGameInputControl,
+} from "./game-input";
 export type { GameInputControl } from "./game-input";
-export type { ParticleSpawn } from "./particles";
+export { updateGameState } from "./game-state";
+export { getGravityDelayMs } from "./gravity";
+export { createInitialGameState } from "./initial-game-state";
+export { drawBagPieces, nextRandom, shuffleBag } from "./random-bag";
+export type { BagDraw } from "./random-bag";
+export { collectRenderCells, getRenderCellKey } from "./render-cells";
+export type { RenderCell, RenderCellKind } from "./render-cells";
+export { safelyUpdateGameState } from "./safe-game-update";
+export {
+  getComboBonus,
+  getDropScore,
+  getLineClearAward,
+  getLineClearBaseScore,
+} from "./scoring";
+export type { DropKind } from "./scoring";
+export {
+  canPlacePiece,
+  createSpawnPiece,
+  getGhostY,
+  getPieceCells,
+  movePiece,
+  tryRotate,
+} from "./tetromino";

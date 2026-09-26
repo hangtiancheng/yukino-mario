@@ -1,71 +1,172 @@
+import clsx from "clsx";
 import { memo, useMemo } from "react";
 import type { CSSProperties, ReactElement } from "react";
 
-import { VIEWPORT_HEIGHT } from "@/constants";
-import type { Coin, Enemy, GameRendererProps, Platform } from "@/types";
-import { filterVisibleRects } from "@/utils";
-import { EnemySprite } from "@/components/enemy-sprite";
-import { CoinSprite, PlatformSprite } from "@/components/game-sprites";
-import { ParallaxScenery } from "@/components/parallax-scenery";
-import { ParticleLayer } from "@/components/particle-layer";
-import { PlayerSprite } from "@/components/player-sprite";
+import {
+  BOARD_HEIGHT,
+  BOARD_ORIGIN_X,
+  BOARD_ORIGIN_Y,
+  BOARD_WIDTH,
+  CELL_SIZE,
+  HOLD_BOX,
+  HOLD_LABEL_POSITION,
+  NEXT_BOX,
+  NEXT_BOX_STEP,
+  NEXT_LABEL_POSITION,
+  NEXT_QUEUE_SIZE,
+  cssColor,
+  tetrisTheme,
+} from "@/constants";
+import type { StageBox, StagePoint } from "@/constants";
+import type { GameRendererProps } from "@/types";
+import { collectRenderCells } from "@/utils";
+import type { RenderCell } from "@/utils";
 
-const MemoEnemySprite = memo(EnemySprite);
-const MemoCoinSprite = memo(CoinSprite);
-const MemoPlatformSprite = memo(PlatformSprite);
+const MemoBoardCell = memo(BoardCell);
+const MemoStageFrame = memo(StageFrame);
 
 export function DomGameRenderer({
   reducedMotion,
   state,
 }: GameRendererProps): ReactElement {
-  const visible = useMemo(
-    (): VisibleSprites => ({
-      coins: filterVisibleRects(state.coins, state.cameraX),
-      enemies: filterVisibleRects(state.enemies, state.cameraX),
-      platforms: filterVisibleRects(state.platforms, state.cameraX),
-    }),
-    [state.cameraX, state.coins, state.enemies, state.platforms],
-  );
-  const worldStyle: CSSProperties = {
-    height: `${VIEWPORT_HEIGHT}px`,
-    transform: `translate3d(${-state.cameraX}px, 0, 0)`,
-    width: `${state.worldWidth}px`,
-  };
+  const cells = useMemo((): RenderCell[] => collectRenderCells(state), [state]);
 
   return (
     <>
-      <div className="absolute inset-x-0 top-0 h-28 bg-white/20" />
-      <ParallaxScenery
-        cameraX={state.cameraX}
-        reducedMotion={reducedMotion}
-        worldWidth={state.level.width}
-      />
-      <div className="absolute top-0 left-0" style={worldStyle}>
-        {visible.platforms.map((platform: Platform): ReactElement => (
-          <MemoPlatformSprite key={platform.id} platform={platform} />
-        ))}
-        {visible.coins.map((coin: Coin): ReactElement | null =>
-          coin.collected ? null : <MemoCoinSprite coin={coin} key={coin.id} />,
-        )}
-        {visible.enemies.map((enemy: Enemy): ReactElement => (
-          <MemoEnemySprite enemy={enemy} key={enemy.id} />
-        ))}
-        <ParticleLayer
-          particles={state.particles}
+      <MemoStageFrame />
+      {cells.map((cell: RenderCell): ReactElement => (
+        <MemoBoardCell
+          cell={cell}
+          key={cell.key}
           reducedMotion={reducedMotion}
         />
-        <PlayerSprite
-          elapsedMs={state.stats.elapsedMs}
-          phase={state.phase}
-          player={state.player}
-        />
-      </div>
+      ))}
     </>
   );
 }
 
-interface VisibleSprites {
-  coins: Coin[];
-  enemies: Enemy[];
-  platforms: Platform[];
+interface BoardCellProps {
+  cell: RenderCell;
+  reducedMotion: boolean;
+}
+
+function BoardCell({ cell, reducedMotion }: BoardCellProps): ReactElement {
+  const color = cssColor(tetrisTheme.cells[cell.type]);
+  const geometry: CSSProperties = {
+    height: cell.size,
+    left: cell.x,
+    top: cell.y,
+    width: cell.size,
+  };
+  if (cell.kind === "ghost") {
+    return (
+      <div
+        className="absolute rounded-[3px]"
+        style={{
+          ...geometry,
+          backgroundColor: color,
+          border: `2px solid ${color}`,
+          opacity: tetrisTheme.ghostAlpha,
+        }}
+      />
+    );
+  }
+  return (
+    <div
+      className={clsx(
+        "absolute rounded-[3px]",
+        !reducedMotion && "transition-opacity duration-150",
+      )}
+      style={{
+        ...geometry,
+        backgroundColor: color,
+        border: `1px solid ${cssColor(tetrisTheme.cellStroke)}`,
+        opacity: cell.dimmed ? 0.45 : 1,
+      }}
+    />
+  );
+}
+
+function StageFrame(): ReactElement {
+  const gridStyle: CSSProperties = {
+    backgroundImage: `linear-gradient(to right, ${cssColor(tetrisTheme.gridLine)} 1px, transparent 1px), linear-gradient(to bottom, ${cssColor(tetrisTheme.gridLine)} 1px, transparent 1px)`,
+    backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+    height: BOARD_HEIGHT,
+    left: BOARD_ORIGIN_X,
+    top: BOARD_ORIGIN_Y,
+    width: BOARD_WIDTH,
+  };
+  const backingStyle: CSSProperties = {
+    backgroundColor: cssColor(tetrisTheme.boardBackground),
+    border: `1px solid ${cssColor(tetrisTheme.boardStroke)}`,
+    boxShadow: "0 16px 36px -20px rgba(32, 30, 26, 0.5)",
+    height: BOARD_HEIGHT + 20,
+    left: BOARD_ORIGIN_X - 10,
+    top: BOARD_ORIGIN_Y - 10,
+    width: BOARD_WIDTH + 20,
+  };
+  return (
+    <>
+      <div className="absolute rounded-[14px]" style={backingStyle} />
+      <div className="absolute" style={gridStyle} />
+      <PanelGroup
+        box={HOLD_BOX}
+        count={1}
+        label="Hold"
+        labelPosition={HOLD_LABEL_POSITION}
+      />
+      <PanelGroup
+        box={NEXT_BOX}
+        count={NEXT_QUEUE_SIZE}
+        label="Next"
+        labelPosition={NEXT_LABEL_POSITION}
+      />
+    </>
+  );
+}
+
+interface PanelGroupProps {
+  box: StageBox;
+  count: number;
+  label: string;
+  labelPosition: StagePoint;
+}
+
+function PanelGroup({
+  box,
+  count,
+  label,
+  labelPosition,
+}: PanelGroupProps): ReactElement {
+  const boxStyle: CSSProperties = {
+    backgroundColor: cssColor(tetrisTheme.cardBackground),
+    border: `1px solid ${cssColor(tetrisTheme.panelStroke)}`,
+  };
+  return (
+    <>
+      <p
+        className="absolute text-xs font-semibold"
+        style={{
+          color: cssColor(tetrisTheme.labelText),
+          left: labelPosition.x,
+          top: labelPosition.y,
+        }}
+      >
+        {label}
+      </p>
+      {Array.from({ length: count }, (_unused, index): ReactElement => (
+        <div
+          className="absolute rounded-[10px]"
+          key={index}
+          style={{
+            ...boxStyle,
+            height: box.height,
+            left: box.x,
+            top: box.y + index * NEXT_BOX_STEP,
+            width: box.width,
+          }}
+        />
+      ))}
+    </>
+  );
 }

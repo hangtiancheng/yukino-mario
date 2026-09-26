@@ -19,7 +19,7 @@ test.describe("not-found route", (): void => {
     await page.getByRole("link", { name: /return home/i }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(
-      page.getByRole("heading", { level: 1, name: /yukino mario/i }),
+      page.getByRole("heading", { level: 1, name: /yukino tetris/i }),
     ).toBeVisible();
   });
 });

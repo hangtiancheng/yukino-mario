@@ -1,9 +1,12 @@
 export interface GameStats {
-  marioBroken: number;
-  coinsCollected: number;
-  distance: number;
-  elapsedMs: number;
-  lives: number;
   score: number;
-  stompedEnemies: number;
+  lines: number;
+  level: number;
+  piecesLocked: number;
+  tetrises: number;
+  hardDrops: number;
+  holds: number;
+  rotates: number;
+  moves: number;
+  elapsedMs: number;
 }

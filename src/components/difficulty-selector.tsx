@@ -15,11 +15,9 @@ export function DifficultySelector({
   onChange,
 }: DifficultySelectorProps): ReactElement {
   return (
-    <div className="rounded-2xl border-2 border-red-300/60 bg-slate-900 p-3">
-      <p className="mb-2 text-[0.6rem] font-black tracking-[0.3em] text-red-200 uppercase">
-        Difficulty
-      </p>
-      <div className="grid grid-cols-2 gap-2">
+    <div className="border-line bg-card rounded-xl border p-4">
+      <p className="text-ink text-sm font-medium">Difficulty</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {difficultyOptions.map((option: DifficultyOption): ReactElement => (
           <button
             aria-pressed={option.difficulty === difficulty}
@@ -28,11 +26,9 @@ export function DifficultySelector({
             onClick={(): void => onChange(option.difficulty)}
             type="button"
           >
-            <span className="text-xs font-black tracking-[0.14em] uppercase">
-              {option.label}
-            </span>
-            <span className="ml-1 text-[0.6rem] font-bold opacity-70">
-              x{option.multiplier} &middot; {option.lives}hp
+            <span className="text-sm font-semibold">{option.label}</span>
+            <span className="text-ink-soft ml-1.5 text-xs">
+              ×{option.multiplier} &middot; Lv{option.startLevel}
             </span>
           </button>
         ))}
@@ -43,9 +39,9 @@ export function DifficultySelector({
 
 function getButtonClass(active: boolean): string {
   return clsx(
-    "rounded-lg border px-3 py-1.5 text-left transition",
+    "rounded-md border px-3 py-2 text-left transition-colors",
     active
-      ? "border-red-300 bg-red-300 text-slate-950"
-      : "border-red-300/40 text-red-100 hover:bg-red-300/20",
+      ? "border-clay bg-clay/10 text-ink"
+      : "border-line bg-paper text-ink hover:border-clay/60",
   );
 }

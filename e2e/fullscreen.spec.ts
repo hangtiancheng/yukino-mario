@@ -6,7 +6,7 @@ test.describe("fullscreen route", (): void => {
   }): Promise<void> => {
     await page.goto("./fullscreen");
     await expect(
-      page.getByRole("application", { name: /yukino mario game stage/i }),
+      page.getByRole("application", { name: /yukino tetris game stage/i }),
     ).toBeVisible();
   });
 
@@ -21,7 +21,7 @@ test.describe("fullscreen route", (): void => {
     await exitLink.click();
     await expect(page).toHaveURL(/\/$/);
     await expect(
-      page.getByRole("heading", { level: 1, name: /yukino mario/i }),
+      page.getByRole("heading", { level: 1, name: /yukino tetris/i }),
     ).toBeVisible();
   });
 });

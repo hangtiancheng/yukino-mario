@@ -1,9 +1,15 @@
-import type { GameInput } from "@/types";
+import type { GameAction, GameInput } from "@/types";
 
-export type GameInputControl = "jump" | "left" | "restart" | "right";
+export type GameInputControl = "left" | "restart" | "right" | "softDrop";
 
 export function createIdleInput(): GameInput {
-  return { left: false, right: false, jump: false, restart: false };
+  return {
+    left: false,
+    right: false,
+    softDrop: false,
+    restart: false,
+    actions: [],
+  };
 }
 
 export function setGameInputControl(
@@ -16,9 +22,23 @@ export function setGameInputControl(
       return { ...current, left: pressed };
     case "right":
       return { ...current, right: pressed };
-    case "jump":
-      return { ...current, jump: pressed };
+    case "softDrop":
+      return { ...current, softDrop: pressed };
     case "restart":
       return { ...current, restart: pressed };
   }
+}
+
+export function pressGameAction(
+  current: GameInput,
+  action: GameAction,
+): GameInput {
+  return { ...current, actions: [...current.actions, action] };
+}
+
+export function drainGameActions(current: GameInput): GameInput {
+  if (current.actions.length === 0) {
+    return current;
+  }
+  return { ...current, actions: [] };
 }

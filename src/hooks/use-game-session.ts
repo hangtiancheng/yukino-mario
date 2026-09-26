@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 
-import { firstLevel } from "@/constants";
 import type { Difficulty } from "@/schema";
 import type { GameState } from "@/types";
 import { useGameAudio } from "./use-game-audio";
@@ -24,11 +23,7 @@ export interface GameSession {
 
 export function useGameSession(difficulty: Difficulty): GameSession {
   const keyboard = useKeyboardInput();
-  const simulation = useGameSimulation(
-    firstLevel,
-    difficulty,
-    keyboard.inputRef,
-  );
+  const simulation = useGameSimulation(difficulty, keyboard.inputRef);
   const audio = useGameAudio(simulation);
   useScoreSubmission(simulation);
   const gameState = useGameSimulationState(simulation);

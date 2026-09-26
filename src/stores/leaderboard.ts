@@ -31,26 +31,26 @@ const playerNameStorage =
   );
 
 export const leaderboardAtom = atomWithStorage<LeaderboardEntry[]>(
-  "yukino-mario-leaderboard",
+  "yukino-tetris-leaderboard",
   [],
   leaderboardStorage,
   { getOnInit: true },
 );
 export const difficultyAtom = atomWithStorage<Difficulty>(
-  "yukino-mario-difficulty",
+  "yukino-tetris-difficulty",
   "medium",
   difficultyStorage,
   { getOnInit: true },
 );
 export const rendererKindAtom = atomWithStorage<GameRendererKind>(
-  "yukino-mario-renderer",
+  "yukino-tetris-renderer",
   "dom",
   rendererStorage,
   { getOnInit: true },
 );
 export const playerNameAtom = atomWithStorage<PlayerName>(
-  "yukino-mario-player-name",
-  "Runner",
+  "yukino-tetris-player-name",
+  "Stacker",
   playerNameStorage,
   { getOnInit: true },
 );
@@ -58,7 +58,8 @@ export const playerNameAtom = atomWithStorage<PlayerName>(
 export function createLeaderboardEntry(
   playerName: string,
   score: number,
-  distance: number,
+  lines: number,
+  level: number,
   difficulty: Difficulty,
 ): LeaderboardEntry {
   const createdAt = new Date().toISOString();
@@ -66,8 +67,9 @@ export function createLeaderboardEntry(
   return {
     createdAt,
     difficulty,
-    distance,
-    id: `${createdAt}-${score}`,
+    id: `${createdAt}-${score}-${lines}`,
+    level,
+    lines,
     playerName: safePlayerName,
     score,
   };
@@ -80,7 +82,7 @@ export function insertLeaderboardEntry(
   const nextEntries = [...entries, entry];
   nextEntries.sort(
     (first, second): number =>
-      second.score - first.score || second.distance - first.distance,
+      second.score - first.score || second.lines - first.lines,
   );
   return nextEntries.slice(0, 10);
 }

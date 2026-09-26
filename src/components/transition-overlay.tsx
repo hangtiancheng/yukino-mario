@@ -8,33 +8,37 @@ interface TransitionOverlayProps {
   phase: TransitionPhase;
   message: string;
   onRestart: () => void;
+  onResume: () => void;
 }
 
 export function TransitionOverlay({
   phase,
   message,
   onRestart,
+  onResume,
 }: TransitionOverlayProps): ReactElement {
   return (
     <div
       aria-label={getTitle(phase)}
       aria-modal="true"
-      className={`absolute inset-0 grid place-items-center px-6 text-center backdrop-blur-sm ${getBackdropClass(phase)}`}
+      className={`absolute inset-0 grid place-items-center px-6 backdrop-blur-[2px] ${getBackdropClass(phase)}`}
       role="dialog"
     >
-      <div
-        className={`max-w-lg rounded-4xl border-8 border-slate-950 p-8 shadow-[10px_10px_0_rgb(15_23_42)] ${getPanelClass(phase)}`}
-      >
-        <p className="text-sm font-black tracking-[0.32em] text-slate-600 uppercase">
+      <div className="border-line bg-card w-full max-w-md rounded-2xl border p-8 text-left shadow-[0_28px_64px_-32px_rgba(32,30,26,0.5)]">
+        <p className="text-ink-soft flex items-center gap-2 text-sm font-medium">
+          <span
+            aria-hidden="true"
+            className={`h-2.5 w-2.5 rounded-[3px] ${getGlyphClass(phase)}`}
+          />
           {getEyebrow(phase)}
         </p>
-        <h2 className="mt-3 text-4xl leading-none font-black text-slate-950 uppercase sm:text-5xl">
+        <h2 className="font-display text-ink mt-3 text-4xl leading-tight">
           {getTitle(phase)}
         </h2>
-        <p className="mt-4 text-base font-bold text-slate-700">{message}</p>
+        <p className="text-ink-soft mt-3 text-sm leading-relaxed">{message}</p>
         <button
-          className="mt-6 rounded-full border-4 border-slate-950 bg-red-500 px-7 py-3 text-sm font-black tracking-[0.24em] text-white uppercase shadow-[6px_6px_0_rgb(15_23_42)] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_rgb(15_23_42)]"
-          onClick={onRestart}
+          className="bg-clay-deep text-card hover:bg-clay focus-visible:ring-clay focus-visible:ring-offset-card mt-6 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          onClick={phase === "paused" ? onResume : onRestart}
           type="button"
         >
           {getActionLabel(phase)}
@@ -45,29 +49,28 @@ export function TransitionOverlay({
 }
 
 function getBackdropClass(phase: TransitionPhase): string {
-  switch (phase) {
-    case "ready":
-      return "bg-slate-950/50";
-    case "lost":
-      return "bg-rose-950/55";
-  }
+  return phase === "lost" ? "bg-[#45231d]/50" : "bg-well/45";
 }
 
-function getPanelClass(phase: TransitionPhase): string {
+function getGlyphClass(phase: TransitionPhase): string {
   switch (phase) {
     case "ready":
-      return "bg-amber-100";
+      return "bg-clay";
+    case "paused":
+      return "bg-[#5fa8a0]";
     case "lost":
-      return "bg-rose-100";
+      return "bg-[#cf6370]";
   }
 }
 
 function getEyebrow(phase: TransitionPhase): string {
   switch (phase) {
     case "ready":
-      return "Yukino Mario";
+      return "Yukino Tetris";
+    case "paused":
+      return "Stack on hold";
     case "lost":
-      return "Failure sequence";
+      return "Top out";
   }
 }
 
@@ -75,11 +78,20 @@ function getTitle(phase: TransitionPhase): string {
   switch (phase) {
     case "ready":
       return "Ready?";
+    case "paused":
+      return "Paused";
     case "lost":
       return "Game Over";
   }
 }
 
 function getActionLabel(phase: TransitionPhase): string {
-  return phase === "ready" ? "Reset" : "Play Again";
+  switch (phase) {
+    case "ready":
+      return "Reset";
+    case "paused":
+      return "Resume";
+    case "lost":
+      return "Play Again";
+  }
 }

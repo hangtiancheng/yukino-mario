@@ -38,8 +38,11 @@ export class AppErrorBoundary extends Component<
 
 function ErrorFallback(): ReactElement {
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-950 px-6 text-center text-sm font-black tracking-[0.3em] text-red-200 uppercase">
-      Something went wrong. The run was reported when monitoring is configured.
+    <div className="bg-paper grid min-h-screen place-items-center px-6 text-center">
+      <p className="text-ink-soft max-w-md text-sm">
+        Something went wrong. The run was reported when monitoring is
+        configured.
+      </p>
     </div>
   );
 }

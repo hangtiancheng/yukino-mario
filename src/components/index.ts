@@ -1,5 +1,4 @@
 export { AppErrorBoundary } from "./app-error-boundary";
-export { EnemySprite } from "./enemy-sprite";
 export { DifficultySelector } from "./difficulty-selector";
 export { GameHud } from "./game-hud";
 export { GameHeader } from "./game-header";
@@ -9,11 +8,9 @@ export { GameStatsHud } from "./game-stats-hud";
 export { FullscreenControls } from "./fullscreen-controls";
 export { ImmersiveGame } from "./immersive-game";
 export { LeaderboardPanel } from "./leaderboard-panel";
-export { ParallaxScenery } from "./parallax-scenery";
-export { ParticleLayer } from "./particle-layer";
 export { PlayerNameField } from "./player-name-field";
-export { PlayerSprite } from "./player-sprite";
 export { RendererSelector } from "./renderer-selector";
 export { DomGameRenderer } from "./renderers";
+export { ScoringCard } from "./scoring-card";
 export { TouchControls } from "./touch-controls";
 export { TransitionOverlay } from "./transition-overlay";

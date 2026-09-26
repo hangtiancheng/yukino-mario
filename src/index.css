@@ -1,9 +1,41 @@
 @import "tailwindcss";
 
+@theme {
+  --color-paper: #faf9f5;
+  --color-card: #fffdf9;
+  --color-line: #e4dfd1;
+  --color-ink: #201e1a;
+  --color-ink-soft: #6f6b62;
+  --color-clay: #d97757;
+  --color-clay-deep: #b95538;
+  --color-well: #26221d;
+
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia,
+    "Songti SC", serif;
+  --font-sans:
+    "Avenir Next", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, "PingFang SC", sans-serif;
+}
+
 @layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
   :focus-visible {
-    outline: 4px solid rgb(253 224 71);
-    outline-offset: 3px;
+    outline: 3px solid var(--color-clay);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-clay);
+    color: var(--color-paper);
   }
 
   @media (prefers-reduced-motion: reduce) {

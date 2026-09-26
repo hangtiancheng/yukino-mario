@@ -56,7 +56,7 @@ export function AppRouter(): ReactElement {
 
 function RouteFallback(): ReactElement {
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-950 text-sm font-black tracking-[0.3em] text-amber-200 uppercase">
+    <div className="bg-paper text-ink-soft grid min-h-screen place-items-center text-sm font-medium">
       Loading route
     </div>
   );

@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { firstLevel } from "@/constants";
 import { createInitialGameState, safelyUpdateGameState } from "@/utils";
 
 describe("safelyUpdateGameState", (): void => {
   it("returns updated state when the update succeeds", (): void => {
-    const previous = createInitialGameState(firstLevel, "medium");
+    const previous = createInitialGameState("medium", 3);
     const next = { ...previous, message: "Updated" };
     const errors: unknown[] = [];
     expect(
@@ -15,7 +14,7 @@ describe("safelyUpdateGameState", (): void => {
   });
 
   it("reports unexpected errors and stops the broken simulation state", (): void => {
-    const previous = createInitialGameState(firstLevel, "medium");
+    const previous = createInitialGameState("medium", 3);
     const error = new Error("boom");
     const errors: unknown[] = [];
     const next = safelyUpdateGameState(
@@ -28,7 +27,7 @@ describe("safelyUpdateGameState", (): void => {
       },
     );
     expect(errors).toEqual([error]);
-    expect(next.player).toBe(previous.player);
+    expect(next.board).toBe(previous.board);
     expect(next.phase).toBe("lost");
     expect(next.message).toBe("Simulation error. Press R to restart.");
   });

@@ -6,9 +6,9 @@ import type { ReactElement } from "react";
 
 import "../src/index.css";
 
-const withArcadeFrame: Decorator = (Story): ReactElement => (
+const withPaperFrame: Decorator = (Story): ReactElement => (
   <MemoryRouter>
-    <div className="min-h-screen bg-slate-950 p-6 text-white">
+    <div className="bg-paper text-ink min-h-screen p-6">
       <div className="mx-auto max-w-6xl">
         <Story />
       </div>
@@ -17,7 +17,7 @@ const withArcadeFrame: Decorator = (Story): ReactElement => (
 );
 
 const preview: Preview = {
-  decorators: [withArcadeFrame],
+  decorators: [withPaperFrame],
   parameters: {
     a11y: {
       test: "error",
@@ -35,8 +35,8 @@ const preview: Preview = {
       },
     },
     backgrounds: {
-      default: "arcade night",
-      values: [{ name: "arcade night", value: "#020617" }],
+      default: "paper",
+      values: [{ name: "paper", value: "#faf9f5" }],
     },
     controls: {
       matchers: {

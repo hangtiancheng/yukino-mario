@@ -30,10 +30,7 @@ export function GameRenderer({
     case "pixi":
       return (
         <Suspense fallback={<RendererFallback />}>
-          <LazyPixiGameRenderer
-            reducedMotion={reducedMotion}
-            simulation={simulation}
-          />
+          <LazyPixiGameRenderer simulation={simulation} />
         </Suspense>
       );
   }
@@ -43,7 +40,7 @@ export function RunningMessage({ message }: { message: string }): ReactElement {
   return (
     <p
       aria-live="polite"
-      className="absolute top-6 left-6 rounded-full border-4 border-slate-950 bg-white/90 px-5 py-2 text-sm font-black tracking-[0.2em] text-slate-900 uppercase"
+      className="border-line bg-card/95 text-ink absolute top-5 left-5 rounded-md border px-3 py-1.5 text-xs font-semibold shadow-[0_6px_16px_-8px_rgba(32,30,26,0.35)]"
       role="status"
     >
       {message}
@@ -53,7 +50,7 @@ export function RunningMessage({ message }: { message: string }): ReactElement {
 
 function RendererFallback(): ReactElement {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-slate-950 text-sm font-black tracking-[0.3em] text-violet-200 uppercase">
+    <div className="bg-paper text-ink-soft absolute inset-0 grid place-items-center text-sm font-medium">
       Loading Pixi renderer
     </div>
   );

@@ -1,6 +1,6 @@
-# Yukino Mario
+# Yukino Tetris
 
-An original endless-runner platformer. Sprint across a procedurally extended course, stomp enemies, collect coins, and break blocks to build a distance-weighted score — then defend your run on the local leaderboard across four difficulty tiers, from Low to Hell.
+A guideline-style falling-block game. Stack tetrominoes, chase TETRIS lines and back-to-back bonuses, and defend a score-, line-, and level-weighted high score on the local leaderboard across four difficulty tiers, from Low to Hell.
 
 **Play it live:** <https://hangtiancheng.github.io/yukino-mario/>
 
@@ -8,21 +8,27 @@ An original endless-runner platformer. Sprint across a procedurally extended cou
 
 ## Features
 
-- **Infinite world** — the level extends segment by segment with deterministic, seeded enemy variation (position jitter, speed scaling, phase offsets); entities behind the camera are pruned to keep memory flat.
-- **Dual renderers, one visual language** — switch at runtime between a DOM renderer (Tailwind-styled divs) and a PixiJS WebGL renderer. Both consume a shared palette and scenery data, so they are pixel-consistent.
-- **Tight platforming feel** — fixed-timestep simulation with coyote time, jump buffering, jump cut, moving-platform carry, stomp bounce, and post-revive invulnerability frames.
-- **Four difficulty tiers** — enemy count, speed, patrol variance, camera easing, lives, and score multiplier all scale from Low to Hell.
+- **Guideline mechanics** — SRS rotation with full wall/floor kick tables, the 7-bag randomizer (seeded and deterministic per run), hold with swap, a five-piece next queue, and ghost piece projection.
+- **Modern game feel** — DAS/ARR auto-shift, soft drop at 20x gravity, hard drop, 500 ms lock delay with capped move resets, and the classic gravity curve `(0.8 - (level - 1) * 0.007)^(level - 1)` seconds per row.
+- **Guideline scoring** — Single/Double/Triple/TETRIS awards scaled by level, back-to-back TETRIS bonus, combo bonus, soft/hard drop points, and a difficulty multiplier on line awards.
+- **Dual renderers, one visual language** — switch at runtime between a DOM renderer (Tailwind-styled divs) and a PixiJS WebGL renderer. Both consume a shared palette and a shared cell-layout description, so they are pixel-consistent.
+- **Four difficulty tiers** — start level and score multiplier scale from Low (Lv1, x1) to Hell (Lv10, x3).
 - **Audio** — sound effects are synthesized at runtime into WAV data URIs and played through Howler.js; a looping background track starts on the first user gesture and respects the global mute toggle.
 - **Installable PWA** — offline-capable via a Workbox service worker; the app shell is precached and the background music is cached on first playback.
-- **Local leaderboard** — scores, difficulty, and player name persist in `localStorage`, validated with Zod on every read.
+- **Local leaderboard** — scores, lines, level, difficulty, and player name persist in `localStorage`, validated with Zod on every read.
 
 ## Controls
 
-| Action  | Keys                    |
-| ------- | ----------------------- |
-| Move    | `A` / `D` or arrow keys |
-| Jump    | `Space`, `W`, or `↑`    |
-| Restart | `R`                     |
+| Action     | Keys                   |
+| ---------- | ---------------------- |
+| Move       | `←` / `→` or `A` / `D` |
+| Soft drop  | `↓` or `S`             |
+| Hard drop  | `Space`                |
+| Rotate CW  | `↑`, `W`, or `X`       |
+| Rotate CCW | `Z`                    |
+| Hold       | `C` or `Shift`         |
+| Pause      | `P` or `Esc`           |
+| Restart    | `R`                    |
 
 Touch controls appear automatically on small screens. A distraction-free fullscreen mode is available at `/fullscreen`.
 
@@ -41,7 +47,7 @@ Touch controls appear automatically on small screens. A distraction-free fullscr
 | Animation      | GSAP                     | 3.15     | Score counter tween                                               |
 | Audio          | Howler.js                | 2.2      | Synthesized sound effects and looping background music            |
 | PWA            | vite-plugin-pwa          | 1.3      | Service worker, web app manifest, offline support                 |
-| Validation     | Zod                      | 4.4      | Runtime schema checks (level data, leaderboard, storage, env)     |
+| Validation     | Zod                      | 4.4      | Runtime schema checks (leaderboard, storage, env)                 |
 | Routing        | React Router             | 7.15     | SPA routing: home, fullscreen, 404                                |
 | Error Tracking | Sentry                   | 10.53    | Exception capture in production                                   |
 | Testing        | Vitest + Testing Library | 4.1      | Unit and integration tests                                        |
@@ -55,9 +61,10 @@ Touch controls appear automatically on small screens. A distraction-free fullscr
 
 ```
 src/
-  components/        UI components (game stage, HUD, selectors, sprites, overlays)
+  components/        UI components (game stage, HUD, selectors, overlays)
     renderers/       DOM and PixiJS renderers (switchable at runtime)
-  constants/         Game physics, level data, difficulty presets, shared palette
+  constants/         Well geometry, input/scoring tuning, tetromino + SRS kick
+                     tables, difficulty presets, shared palette
   hooks/             React hooks (game loop, simulation, session, keyboard, audio)
   pages/             Route-level pages (home, fullscreen, 404)
   routes/            Layout wrapper
@@ -65,12 +72,13 @@ src/
   services/          Sentry, Howler sound bank, BGM, WAV synthesis
   stores/            Jotai atoms with localStorage persistence
   types/             TypeScript type definitions
-  utils/             Pure game logic (physics, collision, enemies, map, camera, scoring)
+  utils/             Pure game logic (board, tetromino rotation/kicks, bag RNG,
+                     gravity, scoring, lock delay, the state-machine reducer)
 ```
 
-The simulation lives outside the React render cycle: `useGameSimulation` holds an immutable `GameState` in a ref and advances it with a fixed-timestep `requestAnimationFrame` loop. Each tick produces a new state, published to subscribers through `useSyncExternalStore` — the DOM renderer consumes it declaratively, while the Pixi renderer redraws imperatively from the same snapshot.
+The simulation lives outside the React render cycle: `useGameSimulation` holds an immutable `GameState` in a ref and advances it with a fixed-timestep `requestAnimationFrame` loop. Each tick produces a new state, published to subscribers through `useSyncExternalStore` — the DOM renderer consumes it declaratively, while the Pixi renderer redraws imperatively from the same snapshot. Both renderers draw the same `collectRenderCells` scene description, which maps the board, active piece, ghost, hold, and next queue into absolutely positioned cells.
 
-All gameplay rules (physics, collision, enemy AI, scoring, world extension) are pure functions in `src/utils`, which keeps them deterministic and unit-testable without a browser.
+All gameplay rules (collision, SRS kicks, bag randomizer, gravity, lock delay, line clears, scoring) are pure functions in `src/utils`, seeded and deterministic, which keeps them unit-testable without a browser.
 
 ---
 

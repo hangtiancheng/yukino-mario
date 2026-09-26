@@ -7,10 +7,11 @@ import { TouchControls } from "@/components/touch-controls";
 import type { GameInput } from "@/types";
 
 const idleInput: GameInput = {
-  jump: false,
   left: false,
-  restart: false,
   right: false,
+  softDrop: false,
+  restart: false,
+  actions: [],
 };
 
 function Host({
@@ -42,11 +43,13 @@ beforeAll((): void => {
 });
 
 describe("TouchControls", (): void => {
-  it("renders directional, restart, and jump buttons", (): void => {
+  it("renders directional, restart, and action buttons", (): void => {
     render(<HostWithOwnRef onRestart={(): void => undefined} />);
     expect(screen.getByRole("button", { name: "Left" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Right" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Jump" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hold" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Spin" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Drop" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /restart run/i }),
     ).toBeInTheDocument();
@@ -62,6 +65,15 @@ describe("TouchControls", (): void => {
     fireEvent.pointerUp(leftButton);
     expect(inputRef.current.left).toBe(false);
     expect(leftButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("queues one-shot actions from the action buttons", (): void => {
+    const inputRef: RefObject<GameInput> = { current: { ...idleInput } };
+    render(<Host inputRef={inputRef} onRestart={(): void => undefined} />);
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Spin" }));
+    expect(inputRef.current.actions).toEqual(["rotate-cw"]);
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Drop" }));
+    expect(inputRef.current.actions).toEqual(["rotate-cw", "hard-drop"]);
   });
 
   it("invokes the restart callback", (): void => {

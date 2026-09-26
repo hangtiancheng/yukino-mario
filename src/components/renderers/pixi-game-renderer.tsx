@@ -7,20 +7,10 @@ import type { PixiGameRendererProps } from "@/types";
 import { destroyPixiScene, renderPixiScene } from "./pixi-scene";
 
 export function PixiGameRenderer({
-  reducedMotion,
   simulation,
 }: PixiGameRendererProps): ReactElement {
   const [hostElement, setHostElement] = useState<HTMLDivElement | null>(null);
   const sceneRef = useRef<Container | null>(null);
-  const reducedMotionRef = useRef<boolean>(reducedMotion);
-
-  useEffect((): void => {
-    reducedMotionRef.current = reducedMotion;
-    const scene = sceneRef.current;
-    if (scene !== null) {
-      renderPixiScene(scene, simulation.stateRef.current, reducedMotion);
-    }
-  }, [reducedMotion, simulation]);
 
   useEffect((): (() => void) | undefined => {
     if (hostElement === null) {
@@ -33,11 +23,7 @@ export function PixiGameRenderer({
     sceneRef.current = scene;
 
     const paint = (): void => {
-      renderPixiScene(
-        scene,
-        simulation.stateRef.current,
-        reducedMotionRef.current,
-      );
+      renderPixiScene(scene, simulation.stateRef.current);
     };
 
     let unsubscribe: (() => void) | null = null;

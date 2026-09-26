@@ -1,39 +1,54 @@
-import { firstLevel, getDifficultyOption } from "@/constants";
+import { NEXT_QUEUE_SIZE, getDifficultyOption } from "@/constants";
 import type { Difficulty } from "@/schema";
-import type { GameState, LevelData } from "@/types";
-import { getTargetCameraX } from "./camera";
-import { createCoins, createPlayer } from "./game-entities";
+import type { GameState } from "@/types";
+import { createEmptyBoard } from "./board";
+import { drawBagPieces } from "./random-bag";
+import { createSpawnPiece, getGhostY } from "./tetromino";
 
 export function createInitialGameState(
-  level: LevelData = firstLevel,
   difficulty: Difficulty = "medium",
+  rngSeed: number = Date.now() >>> 0,
 ): GameState {
-  const player = createPlayer(level);
-  const difficultyOption = getDifficultyOption(difficulty);
+  const option = getDifficultyOption(difficulty);
+  const board = createEmptyBoard();
+  const draw = drawBagPieces([], rngSeed, NEXT_QUEUE_SIZE + 1);
+  const [activeType, ...nextQueue] = draw.pieces;
+  if (activeType === undefined) {
+    throw new Error("initial piece draw failed.");
+  }
+  const active = createSpawnPiece(activeType);
   return {
     difficulty,
-    level,
     phase: "ready",
-    player,
-    platforms: level.platforms,
-    coins: createCoins(level),
-    enemies: level.enemies,
-    particles: [],
-    nextParticleId: 1,
-    nextSegmentIndex: 1,
-    worldWidth: level.width,
-    prunedUntilX: 0,
-    cameraX: getTargetCameraX(player, level.width),
+    board,
+    active,
+    ghostY: getGhostY(board, active),
+    hold: null,
+    holdUsed: false,
+    nextQueue,
+    bag: draw.bag,
+    rngSeed: draw.rngSeed,
+    fallAccumulatorMs: 0,
+    lockTimerMs: 0,
+    lockResets: 0,
+    dasDirection: 0,
+    dasTimerMs: 0,
+    arrTimerMs: 0,
+    combo: 0,
+    backToBack: false,
     stats: {
-      marioBroken: 0,
-      coinsCollected: 0,
-      distance: 0,
-      elapsedMs: 0,
-      lives: difficultyOption.lives,
       score: 0,
-      stompedEnemies: 0,
+      lines: 0,
+      level: option.startLevel,
+      piecesLocked: 0,
+      tetrises: 0,
+      hardDrops: 0,
+      holds: 0,
+      rotates: 0,
+      moves: 0,
+      elapsedMs: 0,
     },
-    message: "Press arrow keys or WASD to start.",
+    message: "Press any control to start stacking.",
     messageTimerMs: 0,
   };
 }

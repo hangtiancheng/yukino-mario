@@ -5,13 +5,17 @@ import type { GameAudioEvent } from "@/utils";
 import { createWavDataUri } from "./wav-synthesis";
 
 const gameAudioEvents: GameAudioEvent[] = [
-  "break",
-  "coin",
-  "hit",
-  "jump",
+  "clear",
+  "drop",
+  "hold",
+  "level",
+  "lock",
   "loss",
+  "move",
+  "pause",
+  "rotate",
   "start",
-  "stomp",
+  "tetris",
 ];
 
 const soundCache = new Map<GameAudioEvent, string>();

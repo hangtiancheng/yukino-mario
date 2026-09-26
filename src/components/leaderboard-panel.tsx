@@ -10,23 +10,19 @@ export function LeaderboardPanel({
   entries,
 }: LeaderboardPanelProps): ReactElement {
   return (
-    <section className="rounded-2xl border-2 border-yellow-300/60 bg-slate-900 p-3 text-yellow-50">
-      <p className="text-[0.6rem] font-black tracking-[0.3em] text-yellow-200 uppercase">
-        Top scores
-      </p>
-      <div className="mt-2 grid gap-1">
-        {entries.length === 0 ? (
-          <p className="text-xs font-bold text-yellow-100/60">
-            No runs recorded yet.
-          </p>
-        ) : (
-          entries.map(
+    <section className="border-line bg-card rounded-xl border p-5">
+      <h2 className="font-display text-ink text-lg">Top scores</h2>
+      {entries.length === 0 ? (
+        <p className="text-ink-soft mt-3 text-sm">No runs recorded yet.</p>
+      ) : (
+        <ol className="mt-3">
+          {entries.map(
             (entry: LeaderboardEntry, index: number): ReactElement => (
               <LeaderboardRow entry={entry} index={index} key={entry.id} />
             ),
-          )
-        )}
-      </div>
+          )}
+        </ol>
+      )}
     </section>
   );
 }
@@ -39,17 +35,20 @@ function LeaderboardRow({
   index: number;
 }): ReactElement {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-yellow-300/30 bg-slate-950 px-3 py-1.5 text-xs font-black">
-      <span className="w-6 text-yellow-300">#{index + 1}</span>
-      <span className="flex-1 truncate tracking-widest uppercase">
+    <li className="border-line/70 flex items-center gap-3 border-b py-2 text-sm last:border-0">
+      <span className="font-display text-clay-deep w-6 tabular-nums">
+        {index + 1}
+      </span>
+      <span className="text-ink flex-1 truncate font-medium">
         {entry.playerName}
       </span>
-      <span className="tracking-widest text-yellow-100/60 uppercase">
+      <span className="border-line text-ink-soft rounded-full border px-2 py-0.5 text-xs">
         {entry.difficulty}
       </span>
-      <span>
-        {entry.score.toLocaleString()} &middot; {Math.floor(entry.distance)}m
+      <span className="text-ink-soft tabular-nums">
+        {entry.score.toLocaleString()} &middot; {entry.lines} lines &middot; Lv
+        {entry.level}
       </span>
-    </div>
+    </li>
   );
 }

@@ -13,6 +13,7 @@ import { GameStatsHud } from "./game-stats-hud";
 import { LeaderboardPanel } from "./leaderboard-panel";
 import { PlayerNameField } from "./player-name-field";
 import { RendererSelector } from "./renderer-selector";
+import { ScoringCard } from "./scoring-card";
 import { TouchControls } from "./touch-controls";
 
 export function GameShell(): ReactElement {
@@ -26,7 +27,7 @@ export function GameShell(): ReactElement {
   const selectDifficulty = useCallback(
     (nextDifficulty: Difficulty): void => {
       setDifficulty(nextDifficulty);
-      simulation.reset(simulation.stateRef.current.level, nextDifficulty);
+      simulation.reset(nextDifficulty);
     },
     [setDifficulty, simulation],
   );
@@ -44,27 +45,31 @@ export function GameShell(): ReactElement {
       <div className="flex flex-wrap items-center gap-3">
         <FullscreenControls />
         <button
-          className="rounded-full border-4 border-slate-950 bg-amber-300 px-5 py-2 text-xs font-black tracking-[0.2em] text-slate-950 uppercase shadow-[5px_5px_0_rgb(15_23_42)]"
+          className="border-line bg-card text-ink hover:border-clay hover:text-clay-deep rounded-md border px-4 py-2 text-sm font-semibold transition-colors"
           onClick={(): void => setSettingsOpen((o) => !o)}
           type="button"
         >
           {settingsOpen ? "Hide settings" : "Settings"}
         </button>
       </div>
-      {settingsOpen && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <DifficultySelector
-            difficulty={difficulty}
-            onChange={selectDifficulty}
-          />
-          <RendererSelector
-            onChange={setRendererKind}
-            selectedRenderer={rendererKind}
-          />
-          <PlayerNameField />
-        </div>
-      )}
-      <LeaderboardPanel entries={leaderboard} />
+      <div className="grid items-start gap-5 md:grid-cols-2">
+        <LeaderboardPanel entries={leaderboard} />
+        {settingsOpen ? (
+          <div className="grid gap-4">
+            <DifficultySelector
+              difficulty={difficulty}
+              onChange={selectDifficulty}
+            />
+            <RendererSelector
+              onChange={setRendererKind}
+              selectedRenderer={rendererKind}
+            />
+            <PlayerNameField />
+          </div>
+        ) : (
+          <ScoringCard />
+        )}
+      </div>
       <TouchControls
         inputRef={keyboard.inputRef}
         onRestart={restartGame}

@@ -29,7 +29,7 @@ export function ImmersiveGame(): ReactElement {
   }
 
   return (
-    <div className="fixed inset-0 z-0 flex h-screen w-screen items-center justify-center overflow-hidden bg-slate-950">
+    <div className="fixed inset-0 z-0 flex h-screen w-screen items-center justify-center overflow-hidden bg-[#1c1915]">
       <div
         className="absolute top-1/2 left-1/2 origin-center"
         style={stageWrapperStyle}
@@ -48,7 +48,7 @@ export function ImmersiveGame(): ReactElement {
       />
       <div className="fixed top-4 right-4 z-30 flex flex-wrap gap-3">
         <button
-          className="rounded-full border-4 border-slate-950 bg-cyan-300 px-4 py-2 text-xs font-black tracking-[0.2em] text-slate-950 uppercase shadow-[5px_5px_0_rgb(15_23_42)] hover:bg-cyan-200 focus-visible:ring-4 focus-visible:ring-amber-200 focus-visible:outline-none disabled:opacity-50"
+          className="hover:border-clay focus-visible:ring-clay rounded-md border border-[#3d382f] bg-[#26221d] px-4 py-2 text-xs font-semibold text-[#f2eee3] transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
           disabled={!fullscreen.supported}
           onClick={fullscreen.toggleFullscreen}
           type="button"
@@ -57,7 +57,7 @@ export function ImmersiveGame(): ReactElement {
         </button>
         <Link
           aria-label="Exit fullscreen game and return home"
-          className="rounded-full border-4 border-slate-950 bg-rose-300 px-4 py-2 text-xs font-black tracking-[0.2em] text-slate-950 uppercase shadow-[5px_5px_0_rgb(15_23_42)] hover:bg-rose-200 focus-visible:ring-4 focus-visible:ring-amber-200 focus-visible:outline-none"
+          className="bg-clay-deep hover:bg-clay focus-visible:ring-clay rounded-md px-4 py-2 text-xs font-semibold text-[#fdf9f2] transition-colors focus-visible:ring-2 focus-visible:outline-none"
           onClick={handleExit}
           to="/"
         >

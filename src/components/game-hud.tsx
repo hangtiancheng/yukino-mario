@@ -14,14 +14,13 @@ interface GameHudProps {
 export function GameHud({ difficulty, stats }: GameHudProps): ReactElement {
   const displayedScore = useAnimatedScore(stats.score);
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border-2 border-slate-700 bg-slate-900/80 px-4 py-2 text-xs font-black tracking-[0.18em] uppercase">
+    <div className="border-line bg-card flex flex-wrap items-center gap-x-8 gap-y-2 rounded-xl border px-5 py-3">
       <HudItem
         label="Score"
-        value={displayedScore.toString().padStart(5, "0")}
+        value={displayedScore.toString().padStart(7, "0")}
       />
-      <HudItem label="Dist" value={`${Math.floor(stats.distance)}m`} />
-      <HudItem label="Coins" value={stats.coinsCollected.toString()} />
-      <HudItem label="Lives" value={stats.lives.toString()} />
+      <HudItem label="Lines" value={stats.lines.toString()} />
+      <HudItem label="Level" value={stats.level.toString()} />
       <HudItem label={difficulty} value={formatTime(stats.elapsedMs)} />
     </div>
   );
@@ -66,9 +65,11 @@ interface HudItemProps {
 
 function HudItem({ label, value }: HudItemProps): ReactElement {
   return (
-    <span className="text-amber-100">
-      <span className="text-amber-400/70">{label} </span>
-      {value}
+    <span className="flex items-baseline gap-2">
+      <span className="text-ink-soft text-xs font-medium">{label}</span>
+      <span className="text-ink text-sm font-semibold tabular-nums">
+        {value}
+      </span>
     </span>
   );
 }

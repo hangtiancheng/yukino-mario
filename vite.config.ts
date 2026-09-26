@@ -53,12 +53,12 @@ export default defineConfig(({ command, isPreview }) => {
           "apple-touch-icon-180x180.png",
         ],
         manifest: {
-          name: "Yukino Mario",
-          short_name: "Yukino Mario",
+          name: "Yukino Tetris",
+          short_name: "Yukino Tetris",
           description:
-            "An original endless platformer prototype with DOM and Pixi renderers.",
-          theme_color: "#020618",
-          background_color: "#020618",
+            "An original falling-block prototype with DOM and Pixi renderers.",
+          theme_color: "#faf9f5",
+          background_color: "#faf9f5",
           display: "standalone",
           orientation: "landscape",
           scope: base,

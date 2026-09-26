@@ -9,9 +9,10 @@ import type { RefObject } from "react";
 
 import type { Difficulty } from "@/schema";
 import { captureException } from "@/services";
-import type { GameInput, GameState, LevelData } from "@/types";
+import type { GameInput, GameState } from "@/types";
 import {
   createInitialGameState,
+  drainGameActions,
   safelyUpdateGameState,
   updateGameState,
 } from "@/utils";
@@ -19,20 +20,19 @@ import { useGameLoop } from "./use-game-loop";
 
 export interface GameSimulation {
   getSnapshot: () => GameState;
-  reset: (level: LevelData, difficulty: Difficulty) => void;
+  reset: (difficulty: Difficulty) => void;
   restart: () => void;
   stateRef: RefObject<GameState>;
   subscribe: (listener: () => void) => () => void;
 }
 
 export function useGameSimulation(
-  initialLevel: LevelData,
   initialDifficulty: Difficulty,
   inputRef: RefObject<GameInput>,
 ): GameSimulation {
   const listenersRef = useRef<Set<() => void>>(new Set());
   const [stateRef] = useState((): RefObject<GameState> => ({
-    current: createInitialGameState(initialLevel, initialDifficulty),
+    current: createInitialGameState(initialDifficulty),
   }));
 
   const publish = useCallback((): void => {
@@ -65,15 +65,14 @@ export function useGameSimulation(
   }, []);
 
   const reset = useCallback(
-    (level: LevelData, difficulty: Difficulty): void => {
-      replaceState(createInitialGameState(level, difficulty));
+    (difficulty: Difficulty): void => {
+      replaceState(createInitialGameState(difficulty));
     },
     [replaceState],
   );
 
   const restart = useCallback((): void => {
-    const currentState = stateRef.current;
-    reset(currentState.level, currentState.difficulty);
+    reset(stateRef.current.difficulty);
   }, [reset, stateRef]);
 
   const advance = useCallback(
@@ -82,14 +81,15 @@ export function useGameSimulation(
         return;
       }
       const previousState = stateRef.current;
+      const input = inputRef.current;
       replaceState(
         safelyUpdateGameState(
           previousState,
-          (): GameState =>
-            updateGameState(previousState, inputRef.current, deltaMs),
+          (): GameState => updateGameState(previousState, input, deltaMs),
           captureException,
         ),
       );
+      inputRef.current = drainGameActions(input);
     },
     [inputRef, replaceState, stateRef],
   );

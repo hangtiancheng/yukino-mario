@@ -11,8 +11,9 @@ export const playerNameSchema = z
 export const leaderboardEntrySchema = z.object({
   createdAt: z.string().min(1),
   difficulty: difficultySchema,
-  distance: z.number().nonnegative(),
   id: z.string().min(1),
+  level: z.number().int().positive(),
+  lines: z.number().int().nonnegative(),
   playerName: playerNameSchema,
   score: z.number().int().nonnegative(),
 });

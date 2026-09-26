@@ -12,17 +12,23 @@ export function RouteErrorElement(): ReactElement {
   }, [error]);
 
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-950 px-6 text-white">
-      <section className="max-w-lg rounded-4xl border-8 border-rose-400 bg-slate-900 p-8 text-center shadow-[10px_10px_0_rgb(244_63_94)]">
-        <p className="text-sm font-black tracking-[0.32em] text-rose-200 uppercase">
+    <main className="bg-paper grid min-h-screen place-items-center px-6">
+      <section className="border-line bg-card w-full max-w-md rounded-2xl border p-8 shadow-[0_24px_60px_-36px_rgba(32,30,26,0.4)]">
+        <p className="text-ink-soft flex items-center gap-2 text-sm font-medium">
+          <span
+            aria-hidden="true"
+            className="h-2.5 w-2.5 rounded-[3px] bg-[#cf6370]"
+          />
           Something broke
         </p>
-        <h1 className="mt-4 text-5xl font-black uppercase">Crash</h1>
-        <p className="mt-4 text-sm font-bold text-rose-100/80">
+        <h1 className="font-display text-ink mt-2 text-5xl leading-none">
+          Crash
+        </h1>
+        <p className="text-ink-soft mt-3 text-sm leading-relaxed">
           The current route failed to render. The error has been reported.
         </p>
         <Link
-          className="mt-6 inline-flex rounded-full border-4 border-slate-950 bg-rose-300 px-6 py-3 text-sm font-black tracking-[0.2em] text-slate-950 uppercase"
+          className="bg-clay-deep hover:bg-clay focus-visible:ring-clay focus-visible:ring-offset-card mt-6 inline-flex rounded-md px-5 py-2.5 text-sm font-semibold text-[#fdf9f2] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           to="/"
         >
           Return home

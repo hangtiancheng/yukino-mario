@@ -29,7 +29,8 @@ export function useScoreSubmission(simulation: GameSimulation): void {
       const entry = createLeaderboardEntry(
         playerName,
         gameState.stats.score,
-        gameState.stats.distance,
+        gameState.stats.lines,
+        gameState.stats.level,
         gameState.difficulty,
       );
       setLeaderboard((entries) => insertLeaderboardEntry(entries, entry));

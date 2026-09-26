@@ -1,134 +1,67 @@
 import type { Difficulty } from "@/schema";
 import type { GameStats } from "./stats";
 
-export type GamePhase = "ready" | "running" | "lost";
+export type GamePhase = "lost" | "paused" | "ready" | "running";
 
-export type HorizontalDirection = -1 | 1;
+export type TetrominoType = "I" | "J" | "L" | "O" | "S" | "T" | "Z";
 
-export type PlatformTone = "breakable" | "mario" | "grass" | "ground";
+export type RotationState = 0 | 1 | 2 | 3;
 
-export type PlatformMotionAxis = "x" | "y";
+export type HorizontalDirection = -1 | 0 | 1;
 
-export type PlayerAnimation =
-  "fall" | "hurt" | "idle" | "jump" | "run-one" | "run-two";
+// A board cell holds the tetromino type that locked into it, or null.
+export type Cell = TetrominoType | null;
 
-export type EnemyType = "flyer" | "hopper" | "walker";
+// Rows are stored top to bottom; row 0 is the visible top of the well.
+export type BoardGrid = readonly (readonly Cell[])[];
 
-export type ParticleKind = "mario" | "coin" | "hit" | "stomp";
-
-export interface Vector {
+export interface ActivePiece {
+  type: TetrominoType;
+  rotation: RotationState;
+  // Column/row of the piece bounding-box origin (SRS boxes: I is 4x4,
+  // O is 2x2, the rest are 3x3).
   x: number;
   y: number;
 }
 
-export interface Size {
-  width: number;
-  height: number;
+export interface CellPosition {
+  col: number;
+  row: number;
 }
 
-export type Rect = Vector & Size;
-
-export interface Player extends Rect {
-  velocity: Vector;
-  grounded: boolean;
-  facing: HorizontalDirection;
-  coyoteMs: number;
-  jumpBufferMs: number;
-  jumpHeld: boolean;
-  invulnerableMs: number;
-}
-
-export interface Platform extends Rect {
-  id: string;
-  tone: PlatformTone;
-  motion?: PlatformMotion | undefined;
-}
-
-export interface PlatformMotion {
-  axis: PlatformMotionAxis;
-  origin: number;
-  distance: number;
-  speed: number;
-  direction: HorizontalDirection;
-}
-
-export interface LevelCoin extends Rect {
-  id: string;
-}
-
-export interface Coin extends LevelCoin {
-  collected: boolean;
-}
-
-export interface BaseEnemy extends Rect {
-  id: string;
-  originX: number;
-  patrolDistance: number;
-  speed: number;
-  direction: HorizontalDirection;
-}
-
-export interface WalkerEnemy extends BaseEnemy {
-  type: "walker";
-}
-
-export interface HopperEnemy extends BaseEnemy {
-  type: "hopper";
-  originY: number;
-  hopPhaseMs: number;
-  hopHeight: number;
-}
-
-export interface FlyerEnemy extends BaseEnemy {
-  type: "flyer";
-  originY: number;
-  wavePhaseMs: number;
-  waveHeight: number;
-}
-
-export type Enemy = FlyerEnemy | HopperEnemy | WalkerEnemy;
-
-export interface Particle extends Rect {
-  id: number;
-  kind: ParticleKind;
-  velocity: Vector;
-  lifeMs: number;
-  maxLifeMs: number;
-}
-
-export interface LevelData {
-  id: string;
-  name: string;
-  summary: string;
-  width: number;
-  height: number;
-  spawn: Vector;
-  platforms: Platform[];
-  coins: LevelCoin[];
-  enemies: Enemy[];
-}
+// One-shot commands queued by input devices between simulation steps.
+export type GameAction =
+  "hard-drop" | "hold" | "pause" | "rotate-ccw" | "rotate-cw";
 
 export interface GameInput {
   left: boolean;
   right: boolean;
-  jump: boolean;
+  softDrop: boolean;
   restart: boolean;
+  // Mutated only by replacing the whole GameInput object; the simulation
+  // reads it without mutating and the caller drains it after each step.
+  actions: readonly GameAction[];
 }
 
 export interface GameState {
   difficulty: Difficulty;
-  level: LevelData;
   phase: GamePhase;
-  player: Player;
-  platforms: Platform[];
-  coins: Coin[];
-  enemies: Enemy[];
-  particles: Particle[];
-  nextParticleId: number;
-  nextSegmentIndex: number;
-  worldWidth: number;
-  prunedUntilX: number;
-  cameraX: number;
+  board: BoardGrid;
+  active: ActivePiece | null;
+  ghostY: number;
+  hold: TetrominoType | null;
+  holdUsed: boolean;
+  nextQueue: readonly TetrominoType[];
+  bag: readonly TetrominoType[];
+  rngSeed: number;
+  fallAccumulatorMs: number;
+  lockTimerMs: number;
+  lockResets: number;
+  dasDirection: HorizontalDirection;
+  dasTimerMs: number;
+  arrTimerMs: number;
+  combo: number;
+  backToBack: boolean;
   stats: GameStats;
   message: string;
   messageTimerMs: number;
